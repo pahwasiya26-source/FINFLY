@@ -20,6 +20,7 @@ import {
   ChevronRight,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
+import { useAuth } from '../lib/auth/AuthContext';
 
 export interface NavItem {
   name: string;
@@ -49,6 +50,7 @@ interface MainNavigationProps {
 
 export function MainNavigation({ onNavigate }: MainNavigationProps) {
   const pathname = usePathname();
+  const { user, profile } = useAuth();
 
   return (
     <aside
@@ -257,14 +259,21 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
               justifyContent: 'center',
             }}
           >
-            SP
+            {profile?.fullName
+              ? profile.fullName
+                  .split(' ')
+                  .map((n) => n[0])
+                  .join('')
+                  .substring(0, 2)
+                  .toUpperCase()
+              : 'SP'}
           </div>
           <div style={{ flex: 1, minWidth: 0 }}>
             <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
-              Siya Pahwa
+              {profile?.fullName || 'Siya Pahwa'}
             </div>
             <div style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', fontWeight: 500 }}>
-              ● Verified Enterprise
+              ● {user ? 'Verified Enterprise' : 'Guest'}
             </div>
           </div>
         </div>

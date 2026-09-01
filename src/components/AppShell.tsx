@@ -1,15 +1,18 @@
 'use client';
 
 import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { MainNavigation } from './MainNavigation';
 import { ModeToggle } from './ModeToggle';
 import { ThemeToggle } from './ThemeToggle';
+import { useAuth } from '../lib/auth/AuthContext';
 import { Menu, X } from 'lucide-react';
 import Link from 'next/link';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { signOut } = useAuth();
   const isLoginPage = pathname === '/login';
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -72,13 +75,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <ThemeToggle compact />
 
-            <Link
-              href="/login"
+            <button
+              type="button"
+              onClick={async () => {
+                await signOut();
+                router.push('/login');
+              }}
               className="topbar-lock-btn"
               title="Switch user or lock workspace"
             >
               <span>Lock / Sign Out</span>
-            </Link>
+            </button>
           </div>
         </header>
 

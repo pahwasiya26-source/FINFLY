@@ -1,29 +1,322 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { Sparkles, Eye, EyeOff, ArrowRight, Shield, CheckCircle2, Lock } from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Sparkles, Eye, EyeOff, ArrowRight, Shield, CheckCircle2, Lock, User, Mail, AlertCircle } from 'lucide-react';
 import { ThreeFinancialCore } from '../../components/ThreeFinancialCore';
 import { ThemeToggle } from '../../components/ThemeToggle';
+import { useAuth } from '../../lib/auth/AuthContext';
 
-export default function LoginPage() {
+function LoginFormContent() {
   const router = useRouter();
-  const [identifier, setIdentifier] = useState('siya.pahwa@finfly.ai');
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get('redirect') || '/';
+  const urlError = searchParams.get('error');
+
+  const { user, signIn, signUp, error: authContextError, isDemoMode, clearError } = useAuth();
+
+  const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
+  const [email, setEmail] = useState('siya.pahwa@finfly.ai');
   const [password, setPassword] = useState('••••••••••••');
+  const [fullName, setFullName] = useState('Siya Pahwa');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
+  const [localError, setLocalError] = useState<string | null>(null);
 
-  const handleSignIn = (e: React.FormEvent) => {
+  useEffect(() => {
+    if (urlError === 'unconfigured_production') {
+      setLocalError('Production authentication is unavailable. Please configure NEXT_PUBLIC_SUPABASE_URL.');
+    }
+  }, [urlError]);
+
+  // If user is already logged in, redirect to dashboard
+  useEffect(() => {
+    if (user && !isLoading) {
+      router.push(redirectUrl);
+    }
+  }, [user, router, redirectUrl, isLoading]);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLocalError(null);
+    clearError();
     setIsLoading(true);
-    // Smooth transition into dashboard
-    setTimeout(() => {
-      router.push('/');
-    }, 600);
+
+    if (authMode === 'signin') {
+      const res = await signIn(email, password);
+      setIsLoading(false);
+      if (res.success) {
+        router.push(redirectUrl);
+      } else {
+        setLocalError(res.error || 'Failed to sign in. Please verify your credentials.');
+      }
+    } else {
+      const res = await signUp(email, password, fullName);
+      setIsLoading(false);
+      if (res.success) {
+        router.push(redirectUrl);
+      } else {
+        setLocalError(res.error || 'Failed to create account. Please try again.');
+      }
+    }
   };
 
+  const activeError = localError || authContextError;
+
+  return (
+    <div style={{ width: '100%', maxWidth: '420px' }}>
+      {/* Header */}
+      <div style={{ marginBottom: '24px' }}>
+        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '8px' }}>
+          {authMode === 'signin' ? 'Welcome back' : 'Create your account'}
+        </h1>
+        <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary)' }}>
+          {authMode === 'signin'
+            ? 'Sign in to access your FINFLY Financial Command Center'
+            : 'Start your deterministic financial intelligence workspace'}
+        </p>
+      </div>
+
+      {/* Auth Mode Toggle Tabs */}
+      <div
+        style={{
+          display: 'flex',
+          background: 'var(--bg-surface-elevated)',
+          borderRadius: '12px',
+          padding: '4px',
+          marginBottom: '20px',
+          border: '1px solid var(--border-color)',
+        }}
+      >
+        <button
+          type="button"
+          className={`auth-tab-btn ${authMode === 'signin' ? 'active' : ''}`}
+          onClick={() => {
+            setAuthMode('signin');
+            setLocalError(null);
+          }}
+        >
+          Sign In
+        </button>
+        <button
+          type="button"
+          className={`auth-tab-btn ${authMode === 'signup' ? 'active' : ''}`}
+          onClick={() => {
+            setAuthMode('signup');
+            setLocalError(null);
+          }}
+        >
+          Create Account
+        </button>
+      </div>
+
+      {/* Error Banner */}
+      {activeError && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'flex-start',
+            gap: '10px',
+            padding: '12px 16px',
+            borderRadius: '12px',
+            background: 'var(--danger-bg)',
+            border: '1px solid var(--danger-border)',
+            color: 'var(--danger)',
+            fontSize: '0.84rem',
+            marginBottom: '20px',
+          }}
+        >
+          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <span>{activeError}</span>
+        </div>
+      )}
+
+      {/* Demo Mode Notice Banner in Development */}
+      {isDemoMode && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '10px 14px',
+            borderRadius: '10px',
+            background: 'var(--success-bg)',
+            border: '1px solid var(--success-border)',
+            color: 'var(--accent-primary)',
+            fontSize: '0.78rem',
+            fontWeight: 600,
+            marginBottom: '20px',
+          }}
+        >
+          <span>Demo Fallback Mode Active (Dev)</span>
+          <span className="pill-badge pill-emerald" style={{ fontSize: '0.65rem' }}>Local Ready</span>
+        </div>
+      )}
+
+      {/* Auth Form */}
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
+        {/* Full Name input (for Sign Up) */}
+        {authMode === 'signup' && (
+          <div>
+            <label
+              style={{
+                display: 'block',
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+                marginBottom: '8px',
+              }}
+            >
+              Full Name
+            </label>
+            <input
+              type="text"
+              required
+              value={fullName}
+              onChange={(e) => setFullName(e.target.value)}
+              placeholder="Siya Pahwa"
+              className="input-premium"
+            />
+          </div>
+        )}
+
+        {/* Email input */}
+        <div>
+          <label
+            style={{
+              display: 'block',
+              fontSize: '0.82rem',
+              fontWeight: 600,
+              color: 'var(--text-primary)',
+              marginBottom: '8px',
+            }}
+          >
+            Email Address
+          </label>
+          <input
+            type="email"
+            required
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            placeholder="name@company.com"
+            className="input-premium"
+          />
+        </div>
+
+        {/* Password input */}
+        <div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+            <label
+              style={{
+                fontSize: '0.82rem',
+                fontWeight: 600,
+                color: 'var(--text-primary)',
+              }}
+            >
+              Password
+            </label>
+            {authMode === 'signin' && (
+              <button
+                type="button"
+                onClick={() => alert('Password reset instructions sent to registered recovery channel.')}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  fontSize: '0.78rem',
+                  fontWeight: 500,
+                  color: 'var(--accent-primary)',
+                  cursor: 'pointer',
+                  padding: 0,
+                }}
+              >
+                Forgot password?
+              </button>
+            )}
+          </div>
+          <div style={{ position: 'relative' }}>
+            <input
+              type={showPassword ? 'text' : 'password'}
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter secure password"
+              className="input-premium"
+              style={{ paddingRight: '44px' }}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+              style={{
+                position: 'absolute',
+                right: '12px',
+                top: '50%',
+                transform: 'translateY(-50%)',
+                background: 'transparent',
+                border: 'none',
+                color: 'var(--text-tertiary)',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+              }}
+            >
+              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Remember Me toggle */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <input
+            type="checkbox"
+            id="rememberMe"
+            checked={rememberMe}
+            onChange={(e) => setRememberMe(e.target.checked)}
+            style={{
+              accentColor: 'var(--accent-primary)',
+              width: '16px',
+              height: '16px',
+              cursor: 'pointer',
+            }}
+          />
+          <label
+            htmlFor="rememberMe"
+            style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
+          >
+            Keep this device trusted for 30 days
+          </label>
+        </div>
+
+        {/* Submit Button */}
+        <button
+          type="submit"
+          disabled={isLoading}
+          className="btn-primary"
+          style={{
+            width: '100%',
+            padding: '14px',
+            fontSize: '0.96rem',
+            letterSpacing: '0.01em',
+            marginTop: '6px',
+          }}
+        >
+          {isLoading ? (
+            <span>Authenticating secure enclave...</span>
+          ) : (
+            <>
+              <span>{authMode === 'signin' ? 'Sign In' : 'Create Account'}</span>
+              <ArrowRight size={18} />
+            </>
+          )}
+        </button>
+      </form>
+    </div>
+  );
+}
+
+export default function LoginPage() {
   return (
     <div
       style={{
@@ -142,18 +435,10 @@ export default function LoginPage() {
                 marginTop: '12px',
               }}
             >
-              <span className="pill-badge pill-emerald">
-                ● Cash Buffer
-              </span>
-              <span className="pill-badge pill-gold">
-                ● Investments
-              </span>
-              <span className="pill-badge pill-neutral">
-                ● Goals
-              </span>
-              <span className="pill-badge pill-indigo">
-                ● Growth Engine
-              </span>
+              <span className="pill-badge pill-emerald">● Cash Buffer</span>
+              <span className="pill-badge pill-gold">● Investments</span>
+              <span className="pill-badge pill-neutral">● Goals</span>
+              <span className="pill-badge pill-indigo">● Growth Engine</span>
             </div>
           </div>
 
@@ -189,7 +474,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  SOC2 Type II & Zero-Knowledge Enclave
+                  SOC2 Type II &amp; Multi-Tenant Row Level Security
                 </div>
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>
                   Deterministic accounting engine — strictly non-hallucinatory
@@ -219,225 +504,33 @@ export default function LoginPage() {
             position: 'relative',
           }}
         >
-          <div style={{ width: '100%', maxWidth: '420px' }}>
-            {/* Header */}
-            <div style={{ marginBottom: '32px' }}>
-              <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '8px' }}>
-                Welcome back
-              </h1>
-              <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary)' }}>
-                Sign in to continue to FINFLY AI Financial OS
-              </p>
-            </div>
-
-            {/* Auth Form */}
-            <form onSubmit={handleSignIn} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-              {/* Identifier input */}
-              <div>
-                <label
-                  style={{
-                    display: 'block',
-                    fontSize: '0.82rem',
-                    fontWeight: 600,
-                    color: 'var(--text-primary)',
-                    marginBottom: '8px',
-                  }}
-                >
-                  Email or Phone Number
-                </label>
-                <input
-                  type="text"
-                  required
-                  value={identifier}
-                  onChange={(e) => setIdentifier(e.target.value)}
-                  placeholder="name@company.com or +91 98765 43210"
-                  className="input-premium"
-                />
-              </div>
-
-              {/* Password input */}
-              <div>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-                  <label
-                    style={{
-                      fontSize: '0.82rem',
-                      fontWeight: 600,
-                      color: 'var(--text-primary)',
-                    }}
-                  >
-                    Password
-                  </label>
-                  <button
-                    type="button"
-                    onClick={() => alert('Password reset instructions sent to registered recovery channel.')}
-                    style={{
-                      background: 'none',
-                      border: 'none',
-                      fontSize: '0.78rem',
-                      fontWeight: 500,
-                      color: 'var(--accent-primary)',
-                      cursor: 'pointer',
-                      padding: 0,
-                    }}
-                  >
-                    Forgot password?
-                  </button>
-                </div>
-                <div style={{ position: 'relative' }}>
-                  <input
-                    type={showPassword ? 'text' : 'password'}
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    placeholder="Enter master password"
-                    className="input-premium"
-                    style={{ paddingRight: '44px' }}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    aria-label={showPassword ? 'Hide password' : 'Show password'}
-                    style={{
-                      position: 'absolute',
-                      right: '12px',
-                      top: '50%',
-                      transform: 'translateY(-50%)',
-                      background: 'transparent',
-                      border: 'none',
-                      color: 'var(--text-tertiary)',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                    }}
-                  >
-                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
-                  </button>
-                </div>
-              </div>
-
-              {/* Remember Me toggle */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                <input
-                  type="checkbox"
-                  id="rememberMe"
-                  checked={rememberMe}
-                  onChange={(e) => setRememberMe(e.target.checked)}
-                  style={{
-                    accentColor: 'var(--accent-primary)',
-                    width: '16px',
-                    height: '16px',
-                    cursor: 'pointer',
-                  }}
-                />
-                <label
-                  htmlFor="rememberMe"
-                  style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
-                >
-                  Keep this device trusted for 30 days
-                </label>
-              </div>
-
-              {/* Sign In Button */}
-              <button
-                type="submit"
-                disabled={isLoading}
-                className="btn-primary"
-                style={{
-                  width: '100%',
-                  padding: '14px',
-                  fontSize: '0.96rem',
-                  letterSpacing: '0.01em',
-                  marginTop: '6px',
-                }}
-              >
-                {isLoading ? (
-                  <span>Authenticating secure enclave...</span>
-                ) : (
-                  <>
-                    <span>Sign In</span>
-                    <ArrowRight size={18} />
-                  </>
-                )}
-              </button>
-            </form>
-
-            {/* Social Divider */}
-            <div
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: '14px',
-                margin: '28px 0 22px 0',
-              }}
-            >
-              <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
-                or continue with
-              </span>
-              <div style={{ flex: 1, height: '1px', background: 'var(--border-color)' }} />
-            </div>
-
-            {/* OAuth Buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px', marginBottom: '28px' }}>
-              <button
-                type="button"
-                onClick={handleSignIn}
-                className="btn-secondary"
-                style={{ padding: '11px', width: '100%' }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24">
-                  <path
-                    fill="#EA4335"
-                    d="M12 5c1.6 0 3 .6 4.1 1.7l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.4 9 5 12 5z"
-                  />
-                  <path
-                    fill="#4285F4"
-                    d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.6h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.9z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3 0-.8.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15.2s.7 5.5 1.9 7.9l3.7-2.9z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23.5c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.4-6.4-5.2L1.9 16.5C3.7 20.2 7.5 23.5 12 23.5z"
-                  />
-                </svg>
-                <span>Google</span>
-              </button>
-
-              <button
-                type="button"
-                onClick={handleSignIn}
-                className="btn-secondary"
-                style={{ padding: '11px', width: '100%' }}
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor">
-                  <path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.81-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M15.97 6.37c.62-.75 1.04-1.8 0.92-2.85-.9.04-1.99.6-2.63 1.35-.57.66-.99 1.72-.85 2.74 1 .08 1.94-.49 2.56-1.24z" />
-                </svg>
-                <span>Apple</span>
-              </button>
-            </div>
-
-            {/* Create Account link */}
-            <div style={{ textAlign: 'center', fontSize: '0.88rem', color: 'var(--text-secondary)' }}>
-              New to FINFLY?{' '}
-              <Link
-                href="/"
-                style={{
-                  color: 'var(--accent-primary)',
-                  fontWeight: 600,
-                  textDecoration: 'none',
-                }}
-              >
-                Create account
-              </Link>
-            </div>
-          </div>
+          <Suspense fallback={<div style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>Loading secure login enclave...</div>}>
+            <LoginFormContent />
+          </Suspense>
         </div>
       </div>
 
       <style jsx>{`
+        .auth-tab-btn {
+          flex: 1;
+          padding: 8px;
+          border: none;
+          background: transparent;
+          color: var(--text-secondary);
+          font-size: 0.85rem;
+          font-weight: 600;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s ease;
+        }
+        .auth-tab-btn:hover {
+          color: var(--text-primary);
+        }
+        .auth-tab-btn.active {
+          background: var(--bg-surface);
+          color: var(--text-primary);
+          box-shadow: var(--shadow-sm);
+        }
         @media (max-width: 960px) {
           .login-container {
             flex-direction: column !important;

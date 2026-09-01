@@ -2,6 +2,7 @@ import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { ThemeProvider } from "../components/ThemeProvider";
 import { AppShell } from "../components/AppShell";
+import { AuthProvider } from "../lib/auth/AuthContext";
 import StyledJsxRegistry from "../components/StyledJsxRegistry";
 
 export const metadata: Metadata = {
@@ -28,15 +29,17 @@ export default function RootLayout({
       <body>
         <StyledJsxRegistry>
           <ThemeProvider>
-            {/* Global Dynamic Atmospheric Background */}
-            <div className="dynamic-background" aria-hidden="true">
-              <div className="bg-radial-layer" />
-              <div className="bg-grid-overlay" />
-              <div className="bg-glow-orb-1" />
-              <div className="bg-glow-orb-2" />
-            </div>
+            <AuthProvider>
+              {/* Global Dynamic Atmospheric Background */}
+              <div className="dynamic-background" aria-hidden="true">
+                <div className="bg-radial-layer" />
+                <div className="bg-grid-overlay" />
+                <div className="bg-glow-orb-1" />
+                <div className="bg-glow-orb-2" />
+              </div>
 
-            <AppShell>{children}</AppShell>
+              <AppShell>{children}</AppShell>
+            </AuthProvider>
           </ThemeProvider>
         </StyledJsxRegistry>
       </body>
