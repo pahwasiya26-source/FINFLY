@@ -20,6 +20,8 @@ import {
   Calendar,
   Layers,
   ChevronRight,
+  Workflow,
+  ArrowRight,
 } from 'lucide-react';
 import Link from 'next/link';
 
@@ -188,7 +190,7 @@ export default function DashboardHome() {
               </span>
             </div>
             <h1 style={{ fontSize: '2.1rem', fontWeight: 700, letterSpacing: '-0.02em' }}>
-              Here’s your financial overview.
+              Here's your financial overview.
             </h1>
           </div>
 
@@ -265,7 +267,7 @@ export default function DashboardHome() {
           </div>
         </div>
 
-        {/* Right: Embedded 3D Financial Nexus Widget */}
+        {/* Right: Embedded 3D Financial Nexus Widget placeholder */}
         <div
           style={{
             position: 'relative',
@@ -318,7 +320,7 @@ export default function DashboardHome() {
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '20px' }}>
           {/* Health 1: LIQUIDITY */}
           <div
-            className="glass-panel"
+            className="glass-panel db-health-card"
             style={{
               padding: '24px',
               borderTop: '3px solid var(--accent-primary)',
@@ -358,15 +360,18 @@ export default function DashboardHome() {
               Liquid cash of ₹{data.cash.toLocaleString('en-IN')} exceeds the recommended baseline reserve.
             </div>
 
-            {/* Custom Progress Bar */}
-            <div style={{ height: '6px', width: '100%', background: 'var(--bg-surface-hover)', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: '84%', background: 'var(--accent-primary)', borderRadius: '999px' }} />
+            {/* Animated Progress Bar */}
+            <div className="db-progress-track">
+              <div className="db-progress-fill db-progress-emerald" style={{ width: '84%' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span>0%</span><span style={{ color: 'var(--accent-primary)', fontWeight: 600 }}>84%</span><span>100%</span>
             </div>
           </div>
 
           {/* Health 2: GROWTH */}
           <div
-            className="glass-panel"
+            className="glass-panel db-health-card"
             style={{
               padding: '24px',
               borderTop: '3px solid var(--indigo-accent)',
@@ -404,14 +409,17 @@ export default function DashboardHome() {
               Portfolio compounding yield outperforming benchmark by +6.1% annualized.
             </div>
 
-            <div style={{ height: '6px', width: '100%', background: 'var(--bg-surface-hover)', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: '76%', background: 'var(--indigo-accent)', borderRadius: '999px' }} />
+            <div className="db-progress-track">
+              <div className="db-progress-fill db-progress-indigo" style={{ width: '76%' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span>0%</span><span style={{ color: 'var(--indigo-accent)', fontWeight: 600 }}>76%</span><span>100%</span>
             </div>
           </div>
 
           {/* Health 3: RISK */}
           <div
-            className="glass-panel"
+            className="glass-panel db-health-card"
             style={{
               padding: '24px',
               borderTop: '3px solid var(--gold-accent)',
@@ -449,8 +457,110 @@ export default function DashboardHome() {
               Debt-to-income at 14.2% with fully collateralized long-term obligations.
             </div>
 
-            <div style={{ height: '6px', width: '100%', background: 'var(--bg-surface-hover)', borderRadius: '999px', overflow: 'hidden' }}>
-              <div style={{ height: '100%', width: '55%', background: 'var(--gold-accent)', borderRadius: '999px' }} />
+            <div className="db-progress-track">
+              <div className="db-progress-fill db-progress-gold" style={{ width: '55%' }} />
+            </div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+              <span>0%</span><span style={{ color: 'var(--gold-accent)', fontWeight: 600 }}>55%</span><span>100%</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* ==========================================================
+          MONEY FLOW — ELEVATED AS PROMINENT INTERACTIVE MODULE
+          ========================================================== */}
+      <div className="db-money-flow-section">
+        {/* Section header with CTA */}
+        <div className="db-section-header">
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <div className="db-section-icon db-icon-emerald">
+              <Workflow size={17} />
+            </div>
+            <div>
+              <h2 className="db-section-title">
+                {isBusiness ? 'Enterprise Money Velocity' : 'Monthly Money Flow'}
+              </h2>
+              <p className="db-section-desc">
+                Deterministic pipeline · inflows → buffer → capital distribution
+              </p>
+            </div>
+          </div>
+          <Link href="/money-flow" className="db-cta-link">
+            Full breakdown <ChevronRight size={14} />
+          </Link>
+        </div>
+
+        {/* Flow Pipeline */}
+        <div className="db-flow-grid">
+          {/* Inflow node */}
+          <div className="db-flow-node db-flow-node-inflow">
+            <div className="db-flow-node-header">
+              <span className="db-flow-node-label">{isBusiness ? 'Monthly Revenue' : 'Primary Income'}</span>
+              <span className="pill-badge pill-emerald" style={{ fontSize: '0.62rem' }}>Inflow</span>
+            </div>
+            <div className="db-flow-node-value db-value-primary">
+              <AnimatedNumber value={data.monthlyIncome} format="currency" />
+            </div>
+            <div className="db-flow-node-sub">100% baseline</div>
+            <div className="db-flow-bar-track">
+              <div className="db-flow-bar db-flow-bar-emerald" style={{ width: '100%' }} />
+            </div>
+          </div>
+
+          {/* Connector */}
+          <div className="db-flow-connector">
+            <ArrowRight size={20} strokeWidth={2} className="db-connector-arrow" />
+          </div>
+
+          {/* Buffer node */}
+          <div className="db-flow-node db-flow-node-buffer">
+            <div className="db-flow-node-header">
+              <span className="db-flow-node-label">{isBusiness ? 'Operating Capital' : 'Cash Buffer'}</span>
+              <span className="pill-badge pill-neutral" style={{ fontSize: '0.62rem' }}>Reserve</span>
+            </div>
+            <div className="db-flow-node-value">
+              <AnimatedNumber value={data.cash} format="currency" />
+            </div>
+            <div className="db-flow-node-sub">Available reserves</div>
+            <div className="db-flow-bar-track">
+              <div className="db-flow-bar db-flow-bar-neutral" style={{ width: `${Math.min((data.cash / data.monthlyIncome) * 40, 100)}%` }} />
+            </div>
+          </div>
+
+          {/* Connector */}
+          <div className="db-flow-connector">
+            <ArrowRight size={20} strokeWidth={2} className="db-connector-arrow" />
+          </div>
+
+          {/* Outflow stack */}
+          <div className="db-flow-outputs">
+            {/* Expenses row */}
+            <div className="db-flow-output-row db-output-danger">
+              <div>
+                <div className="db-flow-node-label">{isBusiness ? 'Operating Burn' : 'Fixed & Variable Expenses'}</div>
+                <div className="db-output-value db-output-danger-val">
+                  -₹{data.monthlyExpenses.toLocaleString('en-IN')}
+                </div>
+              </div>
+              <div className="db-output-pct db-pct-danger">
+                <ArrowDownRight size={12} />
+                {((data.monthlyExpenses / data.monthlyIncome) * 100).toFixed(1)}%
+              </div>
+            </div>
+
+            {/* Surplus row */}
+            <div className="db-flow-output-row db-output-success">
+              <div>
+                <div className="db-flow-node-label">{isBusiness ? 'Net Operating Profit' : 'Surplus & Investments'}</div>
+                <div className="db-output-value db-output-success-val">
+                  +₹{data.monthlySurplus.toLocaleString('en-IN')}
+                </div>
+              </div>
+              <div className="db-output-pct db-pct-success">
+                <ArrowUpRight size={12} />
+                {((data.monthlySurplus / data.monthlyIncome) * 100).toFixed(1)}%
+              </div>
             </div>
           </div>
         </div>
@@ -460,104 +570,92 @@ export default function DashboardHome() {
           ADAPTIVE FINANCIAL MODULES (PERSONAL vs BUSINESS)
           ========================================================== */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div className="db-section-header">
           <div>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>
+            <h2 className="db-section-title">
               {isBusiness ? 'Enterprise Ledger Breakdown' : 'Capital Allocation Matrix'}
             </h2>
-            <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
-              Deterministic accounting metrics for {isBusiness ? 'Enterprise Operations' : 'Personal Wealth'}
+            <p className="db-section-desc">
+              Deterministic accounting metrics · {isBusiness ? 'Enterprise Operations' : 'Personal Wealth'}
             </p>
           </div>
-          <span className="pill-badge pill-neutral">
-            Mode: {mode}
-          </span>
+          <span className="pill-badge pill-neutral">Mode: {mode}</span>
         </div>
 
         {isBusiness ? (
-          /* Business Mode Specific Surfaces */
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-            <div className="glass-panel" style={{ padding: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                Monthly Revenue
-              </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-primary)', margin: '6px 0' }}>
+          <div className="db-metric-grid">
+            <div className="glass-panel db-metric-card">
+              <span className="db-metric-label">Monthly Revenue</span>
+              <div className="db-metric-value db-metric-primary">
                 <AnimatedNumber value={data.monthlyIncome} format="currency" />
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--accent-primary)' }}>+18.2% vs previous quarter</div>
+              <div className="db-metric-trend db-trend-up">
+                <TrendingUp size={12} /> +18.2% vs prev. quarter
+              </div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                Operating Burn
-              </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--danger)', margin: '6px 0' }}>
+            <div className="glass-panel db-metric-card">
+              <span className="db-metric-label">Operating Burn</span>
+              <div className="db-metric-value db-metric-danger">
                 <AnimatedNumber value={data.monthlyExpenses} format="currency" />
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Fixed & variable OPEX</div>
+              <div className="db-metric-trend db-trend-neutral">Fixed &amp; variable OPEX</div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                Accounts Receivable
-              </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-primary)', margin: '6px 0' }}>
+            <div className="glass-panel db-metric-card">
+              <span className="db-metric-label">Accounts Receivable</span>
+              <div className="db-metric-value db-metric-primary">
                 <AnimatedNumber value={data.receivables || 1850000} format="currency" />
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--gold-accent)' }}>₹4.2L past 60-day terms</div>
+              <div className="db-metric-trend db-trend-warn">
+                <ShieldAlert size={12} /> ₹4.2L past 60-day terms
+              </div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                Accounts Payable
-              </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-secondary)', margin: '6px 0' }}>
+            <div className="glass-panel db-metric-card">
+              <span className="db-metric-label">Accounts Payable</span>
+              <div className="db-metric-value db-metric-secondary">
                 <AnimatedNumber value={data.payables || 720000} format="currency" />
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--accent-primary)' }}>All vendor schedules current</div>
+              <div className="db-metric-trend db-trend-up">All vendor schedules current</div>
             </div>
           </div>
         ) : (
-          /* Personal Mode Specific Surfaces */
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '16px' }}>
-            <div className="glass-panel" style={{ padding: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                Liquid Cash Reserve
-              </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--accent-primary)', margin: '6px 0' }}>
+          <div className="db-metric-grid">
+            <div className="glass-panel db-metric-card">
+              <span className="db-metric-label">Liquid Cash Reserve</span>
+              <div className="db-metric-value db-metric-primary">
                 <AnimatedNumber value={data.cash} format="currency" />
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Instant liquidity in checking & sweep</div>
+              <div className="db-metric-trend db-trend-neutral">Instant liquidity in checking &amp; sweep</div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                Investments & Assets
-              </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-primary)', margin: '6px 0' }}>
+            <div className="glass-panel db-metric-card">
+              <span className="db-metric-label">Investments &amp; Assets</span>
+              <div className="db-metric-value db-metric-primary">
                 <AnimatedNumber value={data.investments + data.assets} format="currency" />
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--accent-primary)' }}>Equities, Debt & Real Property</div>
+              <div className="db-metric-trend db-trend-up">
+                <TrendingUp size={12} /> Equities, Debt &amp; Real Property
+              </div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                Total Liabilities
-              </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--danger)', margin: '6px 0' }}>
+            <div className="glass-panel db-metric-card">
+              <span className="db-metric-label">Total Liabilities</span>
+              <div className="db-metric-value db-metric-danger">
                 <AnimatedNumber value={data.liabilities} format="currency" />
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Car loan & secured liabilities</div>
+              <div className="db-metric-trend db-trend-neutral">Car loan &amp; secured liabilities</div>
             </div>
 
-            <div className="glass-panel" style={{ padding: '20px' }}>
-              <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>
-                Monthly Surplus
-              </span>
-              <div style={{ fontSize: '1.6rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--accent-primary)', margin: '6px 0' }}>
+            <div className="glass-panel db-metric-card">
+              <span className="db-metric-label">Monthly Surplus</span>
+              <div className="db-metric-value db-metric-primary">
                 <AnimatedNumber value={data.monthlySurplus} format="currency" />
               </div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Savings Rate: {data.savingsRate}%</div>
+              <div className="db-metric-trend db-trend-up">
+                <ArrowUpRight size={12} /> Savings Rate: {data.savingsRate}%
+              </div>
             </div>
           </div>
         )}
@@ -567,30 +665,16 @@ export default function DashboardHome() {
           SMART INSIGHTS SECTION (With Actionable Modals)
           ========================================================== */}
       <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '16px' }}>
+        <div className="db-section-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div
-              style={{
-                width: '28px',
-                height: '28px',
-                borderRadius: '8px',
-                background: 'var(--accent-primary-subtle)',
-                color: 'var(--accent-primary)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
+            <div className="db-section-icon db-icon-accent">
               <Sparkles size={16} />
             </div>
             <div>
-              <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Smart Insights</h2>
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>
-                Deterministic AI reasoning with zero hallucination guarantee
-              </p>
+              <h2 className="db-section-title">Smart Insights</h2>
+              <p className="db-section-desc">Deterministic AI reasoning · zero hallucination guarantee</p>
             </div>
           </div>
-
           <span className="pill-badge pill-neutral">3 Insights Active</span>
         </div>
 
@@ -598,7 +682,13 @@ export default function DashboardHome() {
           {smartInsights.map((insight) => (
             <div
               key={insight.id}
-              className="glass-panel glass-panel-interactive"
+              className={`glass-panel glass-panel-interactive db-insight-card ${
+                insight.category === 'SAVINGS'
+                  ? 'db-insight-emerald'
+                  : insight.category === 'EXPENSE_VARIANCE'
+                  ? 'db-insight-gold'
+                  : 'db-insight-indigo'
+              }`}
               style={{
                 padding: '22px',
                 display: 'flex',
@@ -657,11 +747,6 @@ export default function DashboardHome() {
         </div>
       </div>
 
-      {/* ==========================================================
-          MONEY FLOW PREVIEW
-          ========================================================== */}
-      <MoneyFlowPreview data={data} isBusiness={isBusiness} />
-
       {/* Interactive Smart Insight Modal */}
       <SmartInsightModal
         insight={selectedInsight}
@@ -669,11 +754,340 @@ export default function DashboardHome() {
       />
 
       <style jsx>{`
+        /* ── Global responsive hero ── */
         @media (max-width: 960px) {
           .glass-hero {
             grid-template-columns: 1fr !important;
             padding: 28px 20px !important;
           }
+        }
+
+        /* ── Health cards hover lift ── */
+        .db-health-card {
+          transition: transform 0.22s cubic-bezier(0.16,1,0.3,1),
+                      box-shadow 0.22s ease;
+          cursor: default;
+        }
+        .db-health-card:hover {
+          transform: translateY(-3px);
+          box-shadow: var(--shadow-md);
+        }
+
+        /* ── Animated progress bars ── */
+        .db-progress-track {
+          height: 6px;
+          width: 100%;
+          background: var(--bg-surface-hover);
+          border-radius: 999px;
+          overflow: hidden;
+        }
+        .db-progress-fill {
+          height: 100%;
+          border-radius: 999px;
+          animation: db-bar-grow 0.9s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        @keyframes db-bar-grow {
+          from { width: 0 !important; }
+        }
+        .db-progress-emerald { background: var(--accent-primary); }
+        .db-progress-indigo  { background: var(--indigo-accent); }
+        .db-progress-gold    { background: var(--gold-accent); }
+
+        /* ── Section header ── */
+        .db-section-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 12px;
+          margin-bottom: 18px;
+        }
+        .db-section-title {
+          font-size: 1.25rem;
+          font-weight: 600;
+          margin: 0;
+        }
+        .db-section-desc {
+          font-size: 0.82rem;
+          color: var(--text-tertiary);
+          margin: 0;
+        }
+        .db-section-icon {
+          width: 30px; height: 30px;
+          border-radius: 8px;
+          display: flex; align-items: center; justify-content: center;
+          flex-shrink: 0;
+        }
+        .db-icon-emerald {
+          background: var(--accent-primary-subtle);
+          color: var(--accent-primary);
+        }
+        .db-icon-accent {
+          background: var(--accent-primary-subtle);
+          color: var(--accent-primary);
+        }
+        .db-cta-link {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          font-size: 0.8rem;
+          font-weight: 600;
+          color: var(--accent-primary);
+          text-decoration: none;
+          padding: 6px 12px;
+          border-radius: 8px;
+          border: 1px solid var(--success-border);
+          background: var(--success-bg);
+          transition: all 0.18s ease;
+          flex-shrink: 0;
+        }
+        .db-cta-link:hover {
+          background: var(--accent-primary);
+          color: #fff;
+          border-color: transparent;
+        }
+
+        /* ── Money Flow Section ── */
+        .db-money-flow-section {
+          background: var(--bg-surface-glass);
+          border: 1px solid var(--border-strong);
+          border-radius: 24px;
+          padding: 28px 32px;
+          position: relative;
+          overflow: hidden;
+          box-shadow: var(--shadow-md);
+        }
+        .db-money-flow-section::before {
+          content: '';
+          position: absolute;
+          top: 0; left: 0; right: 0;
+          height: 2px;
+          background: linear-gradient(90deg, var(--accent-primary), var(--indigo-accent), var(--gold-accent));
+          opacity: 0.7;
+        }
+
+        /* Flow pipeline grid */
+        .db-flow-grid {
+          display: grid;
+          grid-template-columns: minmax(180px, 1fr) auto minmax(180px, 1fr) auto minmax(200px, 1.3fr);
+          align-items: center;
+          gap: 16px;
+        }
+
+        /* Flow node */
+        .db-flow-node {
+          border-radius: 16px;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 8px;
+          transition: transform 0.2s ease, box-shadow 0.2s ease;
+          cursor: default;
+        }
+        .db-flow-node:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+        }
+        .db-flow-node-inflow {
+          background: linear-gradient(145deg, var(--bg-surface-elevated) 0%, rgba(5,150,105,0.06) 100%);
+          border: 1px solid var(--success-border);
+          box-shadow: var(--shadow-xs);
+        }
+        .db-flow-node-buffer {
+          background: linear-gradient(145deg, var(--bg-surface-elevated) 0%, var(--bg-surface-subtle) 100%);
+          border: 1px solid var(--border-strong);
+          box-shadow: var(--shadow-sm);
+        }
+        .db-flow-node-header {
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 6px;
+        }
+        .db-flow-node-label {
+          font-size: 0.74rem;
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          letter-spacing: 0.04em;
+          font-weight: 600;
+        }
+        .db-flow-node-value {
+          font-size: 1.35rem;
+          font-weight: 700;
+          font-family: 'Outfit', sans-serif;
+          color: var(--text-primary);
+          line-height: 1.1;
+        }
+        .db-value-primary { color: var(--text-primary); }
+        .db-flow-node-sub {
+          font-size: 0.73rem;
+          color: var(--accent-primary);
+          font-weight: 500;
+        }
+        .db-flow-bar-track {
+          height: 4px;
+          background: var(--bg-surface-hover);
+          border-radius: 999px;
+          overflow: hidden;
+          margin-top: 4px;
+        }
+        .db-flow-bar {
+          height: 100%;
+          border-radius: 999px;
+          animation: db-bar-grow 1.1s cubic-bezier(0.16,1,0.3,1) both;
+        }
+        .db-flow-bar-emerald { background: var(--accent-primary); }
+        .db-flow-bar-neutral { background: var(--text-tertiary); }
+
+        /* Connector */
+        .db-flow-connector {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          color: var(--text-muted);
+        }
+        .db-connector-arrow {
+          opacity: 0.7;
+          transition: color 0.2s ease;
+        }
+
+        /* Output stack */
+        .db-flow-outputs {
+          display: flex;
+          flex-direction: column;
+          gap: 10px;
+        }
+        .db-flow-output-row {
+          border-radius: 13px;
+          padding: 14px 16px;
+          display: flex;
+          align-items: center;
+          justify-content: space-between;
+          gap: 10px;
+          transition: transform 0.18s ease;
+          cursor: default;
+        }
+        .db-flow-output-row:hover { transform: translateX(2px); }
+        .db-output-danger {
+          background: var(--bg-surface-elevated);
+          border: 1px solid var(--border-color);
+        }
+        .db-output-success {
+          background: var(--bg-surface-elevated);
+          border: 1px solid var(--border-color);
+        }
+        .db-output-value {
+          font-size: 1.05rem;
+          font-weight: 700;
+          font-family: 'Outfit', sans-serif;
+          margin-top: 2px;
+        }
+        .db-output-danger-val { color: var(--danger); }
+        .db-output-success-val { color: var(--accent-primary); }
+        .db-output-pct {
+          display: flex;
+          align-items: center;
+          gap: 3px;
+          font-size: 0.74rem;
+          font-weight: 700;
+          padding: 4px 9px;
+          border-radius: 7px;
+          flex-shrink: 0;
+          white-space: nowrap;
+        }
+        .db-pct-danger {
+          color: var(--danger);
+          background: var(--danger-bg);
+        }
+        .db-pct-success {
+          color: var(--accent-primary);
+          background: var(--success-bg);
+        }
+
+        /* Responsive flow */
+        @media (max-width: 900px) {
+          .db-flow-grid {
+            grid-template-columns: 1fr !important;
+            gap: 10px !important;
+          }
+          .db-flow-connector {
+            transform: rotate(90deg);
+            margin: 2px auto;
+          }
+          .db-money-flow-section { padding: 20px 18px; }
+        }
+
+        /* ── Metric cards ── */
+        .db-metric-grid {
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+          gap: 16px;
+        }
+        .db-metric-card {
+          padding: 20px 22px;
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          transition: transform 0.2s cubic-bezier(0.16,1,0.3,1),
+                      box-shadow 0.2s ease;
+          cursor: default;
+        }
+        .db-metric-card:hover {
+          transform: translateY(-2px);
+          box-shadow: var(--shadow-md);
+          border-color: var(--border-strong);
+        }
+        .db-metric-label {
+          font-size: 0.72rem;
+          color: var(--text-tertiary);
+          text-transform: uppercase;
+          letter-spacing: 0.06em;
+          font-weight: 600;
+        }
+        .db-metric-value {
+          font-size: 1.55rem;
+          font-weight: 700;
+          font-family: 'Outfit', sans-serif;
+          margin: 4px 0 2px;
+          line-height: 1.1;
+        }
+        .db-metric-primary { color: var(--text-primary); }
+        .db-metric-danger  { color: var(--danger); }
+        .db-metric-secondary { color: var(--text-secondary); }
+        .db-metric-trend {
+          font-size: 0.76rem;
+          display: flex;
+          align-items: center;
+          gap: 4px;
+          margin-top: 2px;
+        }
+        .db-trend-up      { color: var(--accent-primary); }
+        .db-trend-warn    { color: var(--gold-accent); }
+        .db-trend-neutral { color: var(--text-secondary); }
+
+        /* ── Insight cards accent borders ── */
+        .db-insight-card {
+          border-left: 3px solid transparent;
+          transition: transform 0.2s cubic-bezier(0.16,1,0.3,1),
+                      box-shadow 0.2s ease,
+                      border-color 0.2s ease;
+        }
+        .db-insight-emerald { border-left-color: var(--accent-primary); }
+        .db-insight-gold    { border-left-color: var(--gold-accent); }
+        .db-insight-indigo  { border-left-color: var(--indigo-accent); }
+        .db-insight-card:hover {
+          transform: translateY(-3px);
+          box-shadow: var(--shadow-md);
+        }
+
+        /* ── Responsive section headers ── */
+        @media (max-width: 640px) {
+          .db-money-flow-section { padding: 18px 14px; }
+          .db-metric-grid { grid-template-columns: 1fr 1fr; }
+          .db-section-header { margin-bottom: 14px; }
+        }
+        @media (max-width: 420px) {
+          .db-metric-grid { grid-template-columns: 1fr; }
         }
       `}</style>
     </div>
