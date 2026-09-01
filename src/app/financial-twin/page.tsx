@@ -67,346 +67,198 @@ export default function FinancialTwinPage() {
   const cashDelta = month12.cash - currentProjectedCash;
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '20px', width: '100%', maxWidth: '1400px', minWidth: 0, margin: '0 auto' }}>
-      {/* Page Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', width: '100%', minWidth: 0 }}>
-        <div style={{ minWidth: 0, maxWidth: '100%' }}>
-          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '6px', marginBottom: '4px' }}>
+    <div className="ft-root">
+      {/* ── Page Header ─────────────────────────────────── */}
+      <div className="ft-page-header">
+        <div className="ft-header-left">
+          <div className="ft-header-badges">
             <span className="pill-badge pill-emerald">Deterministic Engine</span>
-            <span style={{ color: 'var(--text-muted)' }}>•</span>
-            <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Zero-Hallucination Math</span>
+            <span className="ft-sep">•</span>
+            <span className="ft-badge-sub">Zero-Hallucination Math</span>
           </div>
-          <h1 style={{ fontSize: 'clamp(1.5rem, 2.5vw, 2rem)', fontWeight: 700 }}>Financial Digital Twin</h1>
-          <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)' }}>
+          <h1 className="ft-h1">Financial Digital Twin</h1>
+          <p className="ft-subtitle">
             Simulate decisions before committing capital. Real-time deterministic scenario forecasting.
           </p>
         </div>
-
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-          <span className="pill-badge pill-neutral">
+        <div className="ft-header-right">
+          <span className="pill-badge pill-neutral ft-base-pill">
             Base Cash: ₹{data.cash.toLocaleString('en-IN')}
           </span>
         </div>
       </div>
 
-      {/* Main Responsive Grid Layout */}
-      <div className="financial-twin-layout">
-        {/* ==========================================================
-            LEFT COLUMN: SCENARIO VARIABLES LEVERS
-            ========================================================== */}
-        <div className="glass-panel financial-twin-card">
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '8px',
-                  background: 'var(--accent-primary-subtle)',
-                  color: 'var(--accent-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  flexShrink: 0,
-                }}
-              >
-                <Cpu size={16} />
-              </div>
-              <h3 style={{ fontSize: '1.1rem', fontWeight: 600 }}>Scenario Levers</h3>
+      {/* ── Main Layout ─────────────────────────────────── */}
+      <div className="ft-layout">
+
+        {/* ══ LEFT: Scenario Levers ══════════════════════ */}
+        <aside className="ft-levers-col">
+        <div className="glass-panel ft-levers-card">
+          {/* Card header */}
+          <div className="ft-card-header">
+            <div className="ft-card-icon"><Cpu size={16} /></div>
+            <div className="ft-card-title-block">
+              <h3 className="ft-card-title">Scenario Levers</h3>
+              <p className="ft-card-desc">Add monthly income or expense variables to project cash runway.</p>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-              Add monthly income or expense variables to project cash runway.
-            </p>
           </div>
 
           {/* Form: Add Monthly Expense */}
-          <form onSubmit={handleAddExpense} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Add Monthly Outflow (Loan, Hire, EMI)
+          <form onSubmit={handleAddExpense} className="ft-lever-form">
+            <label className="ft-lever-label" htmlFor="ft-exp-input">
+              Monthly Outflow — Loan, Hire, EMI
             </label>
-            <div className="lever-input-row">
+            <div className="ft-lever-row">
               <input
-                type="number"
-                min="1"
-                step="any"
+                id="ft-exp-input"
+                type="number" min="1" step="any"
                 value={newExpense}
                 onChange={(e) => setNewExpense(e.target.value)}
                 placeholder="Amount in ₹"
-                className="input-premium lever-input"
+                className="input-premium ft-lever-input"
+                autoComplete="off"
               />
-              <button
-                type="submit"
-                className="btn-secondary lever-btn-expense"
-              >
-                <Plus size={15} />
-                <span>Expense</span>
+              <button type="submit" className="ft-btn-expense" aria-label="Add expense">
+                <Plus size={14} /><span>Expense</span>
               </button>
             </div>
           </form>
 
           {/* Form: Add Monthly Income */}
-          <form onSubmit={handleAddIncome} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            <label style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-              Add Monthly Inflow (New Client, Raise)
+          <form onSubmit={handleAddIncome} className="ft-lever-form">
+            <label className="ft-lever-label" htmlFor="ft-inc-input">
+              Monthly Inflow — New Client, Raise
             </label>
-            <div className="lever-input-row">
+            <div className="ft-lever-row">
               <input
-                type="number"
-                min="1"
-                step="any"
+                id="ft-inc-input"
+                type="number" min="1" step="any"
                 value={newIncome}
                 onChange={(e) => setNewIncome(e.target.value)}
                 placeholder="Amount in ₹"
-                className="input-premium lever-input"
+                className="input-premium ft-lever-input"
+                autoComplete="off"
               />
-              <button
-                type="submit"
-                className="btn-primary lever-btn-income"
-              >
-                <Plus size={15} />
-                <span>Inflow</span>
+              <button type="submit" className="ft-btn-income" aria-label="Add income">
+                <Plus size={14} /><span>Inflow</span>
               </button>
             </div>
           </form>
 
           {/* Active Variables List */}
-          <div style={{ borderTop: '1px solid var(--border-subtle)', paddingTop: '14px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-              <span style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-tertiary)' }}>
-                Active Levers ({variables.length})
-              </span>
+          <div className="ft-active-levers">
+            <div className="ft-active-levers-header">
+              <span className="ft-active-label">Active Levers ({variables.length})</span>
               {variables.length > 0 && (
-                <button
-                  type="button"
-                  onClick={() => setVariables([])}
-                  className="btn-ghost"
-                  style={{ fontSize: '0.72rem', padding: '3px 6px', color: 'var(--danger)' }}
-                >
-                  <RotateCcw size={12} />
-                  <span>Reset All</span>
+                <button type="button" onClick={() => setVariables([])} className="ft-reset-btn">
+                  <RotateCcw size={11} /><span>Reset All</span>
                 </button>
               )}
             </div>
 
             {variables.length === 0 ? (
-              <div
-                style={{
-                  background: 'var(--bg-surface-subtle)',
-                  borderRadius: '10px',
-                  padding: '14px',
-                  textAlign: 'center',
-                  fontSize: '0.8rem',
-                  color: 'var(--text-tertiary)',
-                  border: '1px dashed var(--border-color)',
-                }}
-              >
+              <div className="ft-empty-state">
                 No active scenario variables. Add levers above to simulate financial impact.
               </div>
             ) : (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+              <ul className="ft-lever-list">
                 {variables.map((v) => (
-                  <div
-                    key={v.id}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      padding: '8px 10px',
-                      borderRadius: '10px',
-                      background: 'var(--bg-surface-subtle)',
-                      border: '1px solid var(--border-color)',
-                      fontSize: '0.82rem',
-                      minWidth: 0,
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px', minWidth: 0, overflow: 'hidden' }}>
-                      <span
-                        style={{
-                          width: '6px',
-                          height: '6px',
-                          borderRadius: '50%',
-                          background: v.target === 'expense' ? 'var(--danger)' : 'var(--accent-primary)',
-                          flexShrink: 0,
-                        }}
-                      />
-                      <span style={{ fontWeight: 500, color: 'var(--text-primary)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                        {v.name}
-                      </span>
+                  <li key={v.id} className="ft-lever-item">
+                    <div className="ft-lever-item-left">
+                      <span className="ft-lever-dot" style={{ background: v.target === 'expense' ? 'var(--danger)' : 'var(--accent-primary)' }} />
+                      <span className="ft-lever-name">{v.name}</span>
                     </div>
-
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexShrink: 0 }}>
-                      <span
-                        style={{
-                          fontWeight: 700,
-                          fontFamily: 'Outfit',
-                          color: v.target === 'expense' ? 'var(--danger)' : 'var(--accent-primary)',
-                          whiteSpace: 'nowrap',
-                        }}
-                      >
+                    <div className="ft-lever-item-right">
+                      <span className="ft-lever-value" style={{ color: v.target === 'expense' ? 'var(--danger)' : 'var(--accent-primary)' }}>
                         {v.target === 'expense' ? '-' : '+'}₹{v.value.toLocaleString('en-IN')}
                       </span>
-                      <button
-                        type="button"
-                        onClick={() => removeVariable(v.id)}
-                        aria-label="Remove lever"
-                        style={{
-                          background: 'transparent',
-                          border: 'none',
-                          color: 'var(--text-tertiary)',
-                          cursor: 'pointer',
-                          fontSize: '1rem',
-                          lineHeight: 1,
-                        }}
-                      >
-                        ×
-                      </button>
+                      <button type="button" onClick={() => removeVariable(v.id)} className="ft-remove-btn" aria-label="Remove lever">×</button>
                     </div>
-                  </div>
+                  </li>
                 ))}
-              </div>
+              </ul>
             )}
           </div>
         </div>
+        </aside>
 
-        {/* ==========================================================
-            RIGHT COLUMN: 12-MONTH SIMULATION & TRAJECTORY COMPARISON
-            ========================================================== */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0, width: '100%' }}>
-          {/* Projected Cash Hero Banner */}
-          <div className="glass-hero financial-twin-hero">
-            <div style={{ minWidth: 0, flex: '1 1 180px' }}>
-              <span className="pill-badge pill-indigo" style={{ marginBottom: '6px', fontSize: '0.68rem' }}>
-                12-Month Deterministic Projection
-              </span>
-              <h3 style={{ fontSize: '1.15rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                Simulated Year-End Cash
-              </h3>
-              <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
-                Projected cash balance at Month 12 based on active scenario variables.
-              </p>
+        {/* ══ RIGHT: Results ══════════════════════════════ */}
+        <div className="ft-results-col">
+
+          {/* Hero Banner */}
+          <div className="glass-hero ft-hero-banner">
+            <div className="ft-hero-left">
+              <span className="pill-badge pill-indigo ft-hero-badge">12-Month Deterministic Projection</span>
+              <h3 className="ft-hero-title">Simulated Year-End Cash</h3>
+              <p className="ft-hero-desc">Projected cash balance at Month 12 based on active scenario variables.</p>
             </div>
-
-            <div className="hero-metric-side">
-              <div
-                style={{
-                  fontSize: 'clamp(1.5rem, 2.5vw, 2.3rem)',
-                  fontWeight: 800,
-                  fontFamily: 'Outfit',
-                  letterSpacing: '-0.02em',
-                  color: 'var(--text-primary)',
-                }}
-              >
+            <div className="ft-hero-metric">
+              <div className="ft-hero-value">
                 <AnimatedNumber value={month12.cash} format="currency" />
               </div>
-
               {variables.length > 0 && (
-                <div
-                  style={{
-                    fontSize: '0.78rem',
-                    fontWeight: 600,
-                    color: cashDelta >= 0 ? 'var(--accent-primary)' : 'var(--danger)',
-                    marginTop: '2px',
-                  }}
-                >
-                  {cashDelta >= 0 ? `+₹${cashDelta.toLocaleString('en-IN')}` : `-₹${Math.abs(cashDelta).toLocaleString('en-IN')}`} vs base baseline
+                <div className="ft-hero-delta" style={{ color: cashDelta >= 0 ? 'var(--accent-primary)' : 'var(--danger)' }}>
+                  {cashDelta >= 0 ? `+₹${cashDelta.toLocaleString('en-IN')}` : `-₹${Math.abs(cashDelta).toLocaleString('en-IN')}`} vs baseline
                 </div>
               )}
             </div>
           </div>
 
           {/* Trajectory Comparison Cards */}
-          <div className="trajectory-grid">
-            {/* Card 1: Current Trajectory */}
-            <div className="glass-panel trajectory-card">
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--text-tertiary)' }}>
-                  Current Trajectory (Base)
-                </span>
-                <span className="pill-badge pill-neutral" style={{ fontSize: '0.62rem' }}>
-                  Baseline
-                </span>
+          <div className="ft-trajectory-grid">
+            {/* Card 1: Current Trajectory (Base) */}
+            <div className="glass-panel ft-trajectory-card">
+              <div className="ft-traj-header">
+                <span className="ft-traj-label">Current Trajectory (Base)</span>
+                <span className="pill-badge pill-neutral ft-traj-badge">Baseline</span>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Monthly Net Flow</span>
-                  <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>
-                    ₹{(data.monthlyIncome - data.monthlyExpenses).toLocaleString('en-IN')}/mo
-                  </span>
+              <div className="ft-traj-rows">
+                <div className="ft-traj-row">
+                  <span className="ft-traj-key">Monthly Net Flow</span>
+                  <span className="ft-traj-val">₹{(data.monthlyIncome - data.monthlyExpenses).toLocaleString('en-IN')}/mo</span>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Year-End Cash</span>
-                  <span style={{ fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-primary)' }}>
-                    ₹{currentProjectedCash.toLocaleString('en-IN')}
-                  </span>
+                <div className="ft-traj-row">
+                  <span className="ft-traj-key">Year-End Cash</span>
+                  <span className="ft-traj-val ft-traj-val-lg">₹{currentProjectedCash.toLocaleString('en-IN')}</span>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Runway Buffer</span>
-                  <span style={{ fontWeight: 600, color: 'var(--accent-primary)' }}>
-                    {(data.cash / (data.monthlyExpenses || 1)).toFixed(1)} Months
-                  </span>
+                <div className="ft-traj-row">
+                  <span className="ft-traj-key">Runway Buffer</span>
+                  <span className="ft-traj-val" style={{ color: 'var(--accent-primary)' }}>{(data.cash / (data.monthlyExpenses || 1)).toFixed(1)} Months</span>
                 </div>
               </div>
             </div>
 
             {/* Card 2: Simulated Scenario */}
             <div
-              className="glass-panel trajectory-card"
+              className="glass-panel ft-trajectory-card"
               style={{
-                border: variables.length > 0 ? '1px solid var(--accent-primary)' : 'var(--glass-border)',
-                boxShadow: variables.length > 0 ? 'var(--shadow-glow)' : 'var(--shadow-sm)',
+                borderColor: variables.length > 0 ? 'var(--accent-primary)' : undefined,
+                boxShadow: variables.length > 0 ? 'var(--shadow-glow)' : undefined,
               }}
             >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <span style={{ fontSize: '0.74rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.04em', color: 'var(--accent-primary)' }}>
-                  Simulated Scenario
-                </span>
-                <span className="pill-badge pill-emerald" style={{ fontSize: '0.62rem' }}>
-                  {variables.length > 0 ? 'Dynamic Active' : 'Synced'}
-                </span>
+              <div className="ft-traj-header">
+                <span className="ft-traj-label ft-traj-label-sim">Simulated Scenario</span>
+                <span className="pill-badge pill-emerald ft-traj-badge">{variables.length > 0 ? 'Dynamic Active' : 'Synced'}</span>
               </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Simulated Net Flow</span>
+              <div className="ft-traj-rows">
+                <div className="ft-traj-row">
+                  <span className="ft-traj-key">Simulated Net Flow</span>
                   <span
-                    style={{
-                      fontWeight: 600,
-                      color:
-                        month12.revenue - month12.expenses > data.monthlyIncome - data.monthlyExpenses
-                          ? 'var(--accent-primary)'
-                          : variables.length > 0
-                          ? 'var(--danger)'
-                          : 'var(--text-primary)',
-                    }}
+                    className="ft-traj-val"
+                    style={{ color: month12.revenue - month12.expenses > data.monthlyIncome - data.monthlyExpenses ? 'var(--accent-primary)' : variables.length > 0 ? 'var(--danger)' : 'var(--text-primary)' }}
                   >
                     ₹{(month12.revenue - month12.expenses).toLocaleString('en-IN')}/mo
                   </span>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Simulated Year-End</span>
-                  <span
-                    style={{
-                      fontWeight: 700,
-                      fontFamily: 'Outfit',
-                      color: month12.cash >= currentProjectedCash ? 'var(--accent-primary)' : 'var(--danger)',
-                    }}
-                  >
+                <div className="ft-traj-row">
+                  <span className="ft-traj-key">Simulated Year-End</span>
+                  <span className="ft-traj-val ft-traj-val-lg" style={{ color: month12.cash >= currentProjectedCash ? 'var(--accent-primary)' : 'var(--danger)' }}>
                     ₹{month12.cash.toLocaleString('en-IN')}
                   </span>
                 </div>
-
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                  <span style={{ color: 'var(--text-secondary)' }}>Simulated Runway</span>
-                  <span
-                    style={{
-                      fontWeight: 600,
-                      color: month12.cash < data.cash ? 'var(--danger)' : 'var(--accent-primary)',
-                    }}
-                  >
+                <div className="ft-traj-row">
+                  <span className="ft-traj-key">Simulated Runway</span>
+                  <span className="ft-traj-val" style={{ color: month12.cash < data.cash ? 'var(--danger)' : 'var(--accent-primary)' }}>
                     {(month12.cash / (month12.expenses || 1)).toFixed(1)} Months
                   </span>
                 </div>
@@ -414,178 +266,318 @@ export default function FinancialTwinPage() {
             </div>
           </div>
 
-          {/* Risk Warning / Verification Enclave */}
+          {/* Risk / OK Banner */}
           {variables.length > 0 && month12.cash < data.cash ? (
-            <div
-              className="glass-panel"
-              style={{
-                padding: '14px 18px',
-                background: 'var(--danger-bg)',
-                borderColor: 'var(--danger-border)',
-                display: 'flex',
-                alignItems: 'center',
-                gap: '12px',
-              }}
-            >
-              <div style={{ color: 'var(--danger)', flexShrink: 0 }}>
-                <AlertTriangle size={18} />
-              </div>
-              <div style={{ minWidth: 0 }}>
-                <div style={{ fontSize: '0.84rem', fontWeight: 600, color: 'var(--danger)' }}>
-                  Liquidity Depletion Warning
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+            <div className="glass-panel ft-warning-banner">
+              <div className="ft-warning-icon"><AlertTriangle size={18} /></div>
+              <div className="ft-warning-text">
+                <div className="ft-warning-title">Liquidity Depletion Warning</div>
+                <div className="ft-warning-body">
                   This scenario depletes reserves by ₹{(data.cash - month12.cash).toLocaleString('en-IN')} over 12 months.
                 </div>
               </div>
             </div>
           ) : (
-            <div
-              className="glass-panel"
-              style={{
-                padding: '12px 16px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                flexWrap: 'wrap',
-                gap: '8px',
-                background: 'var(--bg-surface-subtle)',
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '0.78rem', color: 'var(--text-secondary)', minWidth: 0 }}>
+            <div className="glass-panel ft-ok-banner">
+              <div className="ft-ok-left">
                 <CheckCircle2 size={15} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
                 <span>Deterministic calculations audited with non-linear compounding logic.</span>
               </div>
-              <span className="pill-badge pill-emerald" style={{ fontSize: '0.65rem', flexShrink: 0 }}>
-                Mathematical Proof OK
-              </span>
+              <span className="pill-badge pill-emerald ft-ok-badge">Mathematical Proof OK</span>
             </div>
           )}
         </div>
       </div>
 
       <style jsx>{`
-        .financial-twin-layout {
+        /* ── Root ── */
+        .ft-root {
+          display: flex;
+          flex-direction: column;
+          gap: 28px;
+          width: 100%;
+          max-width: 1440px;
+          margin: 0 auto;
+          min-width: 0;
+        }
+
+        /* ── Header ── */
+        .ft-page-header {
+          display: flex;
+          align-items: flex-start;
+          justify-content: space-between;
+          flex-wrap: wrap;
+          gap: 16px;
+          width: 100%;
+        }
+        .ft-header-left {
+          display: flex;
+          flex-direction: column;
+          gap: 6px;
+          min-width: 0;
+          flex: 1 1 auto;
+        }
+        .ft-header-badges {
+          display: flex;
+          align-items: center;
+          flex-wrap: wrap;
+          gap: 6px;
+        }
+        .ft-sep { color: var(--text-muted); }
+        .ft-badge-sub { font-size: 0.76rem; color: var(--text-tertiary); }
+        .ft-h1 {
+          font-size: clamp(1.5rem, 2.4vw, 2rem);
+          font-weight: 700;
+          margin: 0;
+        }
+        .ft-subtitle {
+          font-size: 0.86rem;
+          color: var(--text-secondary);
+          margin: 0;
+          max-width: 480px;
+        }
+        .ft-header-right { flex-shrink: 0; padding-top: 2px; }
+        .ft-base-pill { white-space: nowrap; }
+
+        /* ── Main grid ── */
+        .ft-layout {
           display: grid;
-          grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
-          gap: 20px;
+          grid-template-columns: 340px minmax(0, 1fr);
+          gap: 24px;
           width: 100%;
           align-items: start;
         }
 
-        .financial-twin-card {
-          padding: 22px;
+        /* ── Left: Levers ── */
+        .ft-levers-col { min-width: 0; width: 100%; }
+        .ft-levers-card {
+          padding: 24px;
           display: flex;
           flex-direction: column;
-          gap: 18px;
+          gap: 20px;
           min-width: 0;
           width: 100%;
         }
+        .ft-card-header { display: flex; align-items: flex-start; gap: 12px; }
+        .ft-card-icon {
+          width: 32px; height: 32px; min-width: 32px;
+          border-radius: 9px;
+          background: var(--accent-primary-subtle);
+          color: var(--accent-primary);
+          display: flex; align-items: center; justify-content: center;
+          margin-top: 2px;
+        }
+        .ft-card-title-block { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .ft-card-title { font-size: 1.08rem; font-weight: 600; margin: 0; line-height: 1.3; }
+        .ft-card-desc { font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.45; }
 
-        .financial-twin-hero {
-          padding: 22px 26px;
-          display: flex;
+        /* Lever forms */
+        .ft-lever-form { display: flex; flex-direction: column; gap: 8px; }
+        .ft-lever-label {
+          font-size: 0.74rem; font-weight: 600;
+          color: var(--text-secondary);
+          letter-spacing: 0.01em; line-height: 1.3;
+        }
+        .ft-lever-row { display: flex; gap: 8px; align-items: stretch; width: 100%; }
+        .ft-lever-input {
+          flex: 1 1 auto;
+          min-width: 0;
+          padding: 10px 12px !important;
+          font-size: 0.87rem !important;
+          height: 42px;
+        }
+        .ft-btn-expense, .ft-btn-income {
+          display: inline-flex;
           align-items: center;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 14px;
-          width: 100%;
-          min-width: 0;
-        }
-
-        .hero-metric-side {
-          text-align: right;
+          justify-content: center;
+          gap: 5px;
           flex-shrink: 0;
+          height: 42px;
+          padding: 0 14px;
+          border-radius: 12px;
+          font-size: 0.83rem; font-weight: 600;
+          font-family: 'Inter', sans-serif;
+          cursor: pointer;
+          white-space: nowrap;
+          transition: all 0.2s ease;
+          border: 1px solid;
         }
-
-        .lever-input-row {
-          display: grid;
-          grid-template-columns: minmax(0, 1fr) auto;
-          gap: 8px;
-          width: 100%;
-          align-items: center;
-        }
-
-        .lever-input {
-          padding: 10px 12px;
-          font-size: 0.86rem;
-          min-width: 0;
-          width: 100%;
-        }
-
-        .lever-btn-expense {
+        .ft-btn-expense {
+          background: var(--danger-bg);
           color: var(--danger);
           border-color: var(--danger-border);
-          padding: 10px 14px;
-          white-space: nowrap;
-          flex-shrink: 0;
-          font-size: 0.85rem;
-          font-weight: 600;
         }
-
-        .lever-btn-income {
-          padding: 10px 14px;
-          white-space: nowrap;
-          flex-shrink: 0;
-          font-size: 0.85rem;
-          font-weight: 600;
+        .ft-btn-expense:hover { background: rgba(239,68,68,0.18); transform: translateY(-1px); }
+        .ft-btn-income {
+          background: var(--accent-primary);
+          color: #fff;
+          border-color: rgba(255,255,255,0.15);
+          box-shadow: 0 3px 10px var(--accent-glow);
         }
+        .ft-btn-income:hover { background: var(--accent-primary-hover); transform: translateY(-1px); }
 
-        .trajectory-grid {
+        /* Active levers */
+        .ft-active-levers {
+          border-top: 1px solid var(--border-subtle);
+          padding-top: 16px;
+          display: flex; flex-direction: column; gap: 10px;
+        }
+        .ft-active-levers-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+        .ft-active-label {
+          font-size: 0.72rem; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.06em;
+          color: var(--text-tertiary);
+        }
+        .ft-reset-btn {
+          display: inline-flex; align-items: center; gap: 4px;
+          background: transparent; border: none;
+          font-size: 0.72rem; font-weight: 600;
+          color: var(--danger); cursor: pointer;
+          padding: 4px 8px; border-radius: 6px;
+          transition: background 0.15s;
+          font-family: 'Inter', sans-serif;
+        }
+        .ft-reset-btn:hover { background: var(--danger-bg); }
+        .ft-empty-state {
+          background: var(--bg-surface-subtle);
+          border: 1px dashed var(--border-color);
+          border-radius: 12px;
+          padding: 18px 16px;
+          text-align: center;
+          font-size: 0.8rem;
+          color: var(--text-tertiary);
+          line-height: 1.5;
+        }
+        .ft-lever-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
+        .ft-lever-item {
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 10px; padding: 10px 12px;
+          border-radius: 11px;
+          background: var(--bg-surface-subtle);
+          border: 1px solid var(--border-color);
+          min-width: 0;
+        }
+        .ft-lever-item-left { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
+        .ft-lever-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+        .ft-lever-name { font-size: 0.83rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .ft-lever-item-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+        .ft-lever-value { font-size: 0.84rem; font-weight: 700; font-family: 'Outfit', sans-serif; white-space: nowrap; }
+        .ft-remove-btn {
+          background: transparent; border: none;
+          color: var(--text-muted); cursor: pointer;
+          font-size: 1.1rem; line-height: 1;
+          width: 24px; height: 24px;
+          display: flex; align-items: center; justify-content: center;
+          border-radius: 5px; transition: color 0.15s, background 0.15s; flex-shrink: 0;
+        }
+        .ft-remove-btn:hover { color: var(--danger); background: var(--danger-bg); }
+
+        /* ── Right: Results ── */
+        .ft-results-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; width: 100%; }
+
+        /* Hero */
+        .ft-hero-banner {
+          padding: 28px 32px;
+          display: flex; align-items: center; justify-content: space-between;
+          flex-wrap: wrap; gap: 20px;
+          min-width: 0; width: 100%;
+        }
+        .ft-hero-left { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 200px; }
+        .ft-hero-badge { font-size: 0.67rem; align-self: flex-start; }
+        .ft-hero-title { font-size: clamp(1rem, 1.4vw, 1.2rem); font-weight: 600; color: var(--text-primary); margin: 0; }
+        .ft-hero-desc { font-size: 0.79rem; color: var(--text-secondary); margin: 0; line-height: 1.45; }
+        .ft-hero-metric { text-align: right; flex-shrink: 0; }
+        .ft-hero-value {
+          font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+          font-weight: 800; font-family: 'Outfit', sans-serif;
+          letter-spacing: -0.025em; color: var(--text-primary); line-height: 1.1;
+        }
+        .ft-hero-delta { font-size: 0.78rem; font-weight: 600; margin-top: 4px; }
+
+        /* Trajectory grid: always 2 equal columns on desktop/tablet */
+        .ft-trajectory-grid {
           display: grid;
-          grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+          grid-template-columns: repeat(2, minmax(0, 1fr));
           gap: 16px;
           width: 100%;
-          min-width: 0;
+        }
+        .ft-trajectory-card {
+          padding: 20px 22px;
+          display: flex; flex-direction: column; gap: 16px;
+          min-width: 0; width: 100%;
+        }
+        .ft-traj-header {
+          display: flex; align-items: center; justify-content: space-between;
+          gap: 8px; flex-wrap: wrap;
+        }
+        .ft-traj-label {
+          font-size: 0.71rem; font-weight: 700;
+          text-transform: uppercase; letter-spacing: 0.05em;
+          color: var(--text-tertiary);
+        }
+        .ft-traj-label-sim { color: var(--accent-primary); }
+        .ft-traj-badge { font-size: 0.6rem; flex-shrink: 0; }
+        .ft-traj-rows { display: flex; flex-direction: column; gap: 10px; }
+        .ft-traj-row {
+          display: flex; align-items: baseline;
+          justify-content: space-between; gap: 8px;
+          font-size: 0.83rem; min-width: 0;
+        }
+        .ft-traj-key { color: var(--text-secondary); white-space: nowrap; flex-shrink: 0; }
+        .ft-traj-val { font-weight: 600; color: var(--text-primary); text-align: right; min-width: 0; word-break: break-all; }
+        .ft-traj-val-lg { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.88rem; }
+
+        /* Banners */
+        .ft-warning-banner {
+          padding: 16px 20px;
+          background: var(--danger-bg);
+          border-color: var(--danger-border);
+          display: flex; align-items: flex-start; gap: 14px;
+        }
+        .ft-warning-icon { color: var(--danger); flex-shrink: 0; margin-top: 1px; }
+        .ft-warning-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+        .ft-warning-title { font-size: 0.86rem; font-weight: 600; color: var(--danger); }
+        .ft-warning-body { font-size: 0.79rem; color: var(--text-secondary); line-height: 1.45; }
+        .ft-ok-banner {
+          padding: 14px 20px;
+          background: var(--bg-surface-subtle);
+          display: flex; align-items: center; justify-content: space-between;
+          flex-wrap: wrap; gap: 10px;
+        }
+        .ft-ok-left {
+          display: flex; align-items: center; gap: 9px;
+          font-size: 0.79rem; color: var(--text-secondary);
+          min-width: 0; flex: 1 1 auto;
+        }
+        .ft-ok-badge { font-size: 0.63rem; flex-shrink: 0; }
+
+        /* ── Responsive: Tablet (≤ 1100px) ── */
+        @media (max-width: 1100px) {
+          .ft-layout { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; }
         }
 
-        .trajectory-card {
-          padding: 18px 20px;
-          display: flex;
-          flex-direction: column;
-          gap: 12px;
-          min-width: 0;
-          width: 100%;
+        /* ── Responsive: Tablet portrait (≤ 900px) ── */
+        @media (max-width: 900px) {
+          .ft-layout { grid-template-columns: 1fr; gap: 20px; }
+          .ft-levers-col { width: 100%; }
         }
 
-        @media (max-width: 1024px) {
-          .financial-twin-layout {
-            grid-template-columns: 1fr;
-          }
+        /* ── Responsive: Mobile (≤ 580px) ── */
+        @media (max-width: 580px) {
+          .ft-root { gap: 20px; }
+          .ft-levers-card { padding: 18px 16px; gap: 16px; }
+          .ft-hero-banner { padding: 20px 18px; flex-direction: column; align-items: flex-start; gap: 14px; }
+          .ft-hero-metric { text-align: left; width: 100%; }
+          .ft-trajectory-grid { grid-template-columns: 1fr; }
+          .ft-trajectory-card { padding: 16px 16px; }
+          .ft-ok-banner { flex-direction: column; align-items: flex-start; }
         }
 
-        @media (max-width: 480px) {
-          .financial-twin-card {
-            padding: 14px 12px !important;
-          }
-          .financial-twin-hero {
-            padding: 16px 14px !important;
-            flex-direction: column !important;
-            align-items: flex-start !important;
-          }
-          .hero-metric-side {
-            text-align: left !important;
-            width: 100% !important;
-          }
-          .lever-input-row {
-            grid-template-columns: minmax(0, 1fr) auto !important;
-            gap: 6px !important;
-          }
-          .lever-input {
-            padding: 8px 10px !important;
-            font-size: 0.8rem !important;
-          }
-          .lever-btn-expense,
-          .lever-btn-income {
-            padding: 8px 10px !important;
-            font-size: 0.78rem !important;
-          }
-          .trajectory-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .trajectory-card {
-            padding: 14px 14px !important;
-          }
+        /* ── Responsive: XS (≤ 380px) ── */
+        @media (max-width: 380px) {
+          .ft-lever-row { flex-direction: column; }
+          .ft-btn-expense, .ft-btn-income { width: 100%; height: 40px; }
+          .ft-lever-input { height: 40px !important; }
         }
       `}</style>
     </div>
