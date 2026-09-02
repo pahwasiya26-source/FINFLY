@@ -15,32 +15,62 @@ export function middleware(request: NextRequest) {
     return NextResponse.next();
   }
 
-  // 2. Check if Supabase is configured
+  const isProduction = process.env.NODE_ENV === 'production';
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const isConfigured =
     supabaseUrl &&
     supabaseUrl !== 'https://your-project-id.supabase.co' &&
     supabaseUrl.startsWith('https://');
 
-  if (isConfigured) {
-    // Check for Supabase session cookies (sb-*-auth-token or supabase-auth-token)
-    const hasAuthCookie = request.cookies
-      .getAll()
-      .some((c) => c.name.startsWith('sb-') && c.name.endsWith('-auth-token'));
+  // In strict production, only legitimate Supabase auth session tokens are accepted
+  if (isProduction) {
+    if (!isConfigured) {
+      // In unconfigured production, block access to protected financial data safely
+      const loginUrl = new URL('/login', request.url);
+      loginUrl.searchParams.set('error', 'unconfigured_production');
+      return NextResponse.redirect(loginUrl);
+    }
 
-    if (!hasAuthCookie) {
+    // Check for standard Supabase session cookies (sb-<project-ref>-auth-token)
+    // Note: synthetic/demo cookies like 'sb-finfly-auth-token' or 'finfly_session' are strictly rejected in production
+    const hasProductionAuthCookie = request.cookies
+      .getAll()
+      .some(
+        (c) =>
+          c.name.startsWith('sb-') &&
+          c.name.endsWith('-auth-token') &&
+          c.name !== 'sb-finfly-auth-token'
+      );
+
+    if (!hasProductionAuthCookie) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
-  } else if (process.env.NODE_ENV === 'production') {
-    // In unconfigured production, block access to protected financial data safely
+
+    return NextResponse.next();
+  }
+
+  // -------------------------------------------------------------
+  // Development / Local Demo Mode
+  // -------------------------------------------------------------
+  // In development, allow demo session cookies or pass-through
+  const hasDevSession = request.cookies
+    .getAll()
+    .some(
+      (c) =>
+        (c.name.startsWith('sb-') && c.name.endsWith('-auth-token')) ||
+        c.name === 'finfly_session' ||
+        c.name === 'sb-finfly-auth-token'
+    );
+
+  if (isConfigured && !hasDevSession) {
+    // If Supabase is configured locally and user has no session, redirect to login
     const loginUrl = new URL('/login', request.url);
-    loginUrl.searchParams.set('error', 'unconfigured_production');
+    loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);
   }
 
-  // In development demo mode without Supabase, allow pass-through
   return NextResponse.next();
 }
 

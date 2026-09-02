@@ -27,7 +27,7 @@ async function run() {
 
   // Connect WebSocket using native standard
   const { WebSocket } = await import('ws').catch(async () => {
-    // If ws package not installed, we can test via standard fetch/REST endpoints
+    // If ws package not installed, we can test via standard fetch/REST endpoints     
     return { WebSocket: null };
   });
 

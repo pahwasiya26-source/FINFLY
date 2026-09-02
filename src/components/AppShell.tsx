@@ -6,8 +6,7 @@ import { MainNavigation } from './MainNavigation';
 import { ModeToggle } from './ModeToggle';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '../lib/auth/AuthContext';
-import { Menu, X } from 'lucide-react';
-import Link from 'next/link';
+import { Menu, X, Shield, Lock, Bell } from 'lucide-react';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -65,6 +64,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 Deterministic Engine Active
               </span>
             </div>
+
+            <div className="system-enclave-badge">
+              <Shield size={13} color="var(--accent-primary)" />
+              <span>Hardware Enclave</span>
+            </div>
           </div>
 
           {/* Right: Entity switcher, theme toggle, actions */}
@@ -82,9 +86,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                 router.push('/login');
               }}
               className="topbar-lock-btn"
-              title="Switch user or lock workspace"
+              title="Lock session and return to login"
             >
-              <span>Lock / Sign Out</span>
+              <Lock size={13} />
+              <span>Lock Workspace</span>
             </button>
           </div>
         </header>
@@ -148,7 +153,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           display: flex;
           align-items: center;
           justify-content: space-between;
-          padding: 0 24px;
+          padding: 0 28px;
           position: sticky;
           top: 0;
           z-index: 30;
@@ -177,8 +182,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         .system-status-pill {
           display: flex;
           align-items: center;
-          gap: 8px;
-          padding: 5px 12px;
+          gap: 7px;
+          padding: 4px 11px;
           border-radius: 999px;
           background: var(--bg-surface-subtle);
           border: 1px solid var(--border-color);
@@ -195,16 +200,30 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         }
 
         .status-text {
-          font-size: 0.78rem;
+          font-size: 0.76rem;
           font-weight: 600;
           color: var(--text-secondary);
+          white-space: nowrap;
+        }
+
+        .system-enclave-badge {
+          display: flex;
+          align-items: center;
+          gap: 5px;
+          font-size: 0.72rem;
+          font-weight: 600;
+          color: var(--text-tertiary);
+          padding: 4px 9px;
+          border-radius: 6px;
+          background: var(--bg-surface-elevated);
+          border: 1px solid var(--border-subtle);
           white-space: nowrap;
         }
 
         .top-header-right {
           display: flex;
           align-items: center;
-          gap: 10px;
+          gap: 12px;
           flex-shrink: 0;
         }
 
@@ -219,15 +238,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           align-items: center;
           gap: 6px;
           font-size: 0.78rem;
-          font-weight: 500;
+          font-weight: 600;
           color: var(--text-secondary);
           text-decoration: none;
-          padding: 6px 10px;
+          padding: 6px 12px;
           border-radius: 8px;
           border: 1px solid var(--border-color);
           background: var(--bg-surface-subtle);
-          transition: all 0.2s ease;
+          cursor: pointer;
+          transition: all 0.15s ease;
           white-space: nowrap;
+        }
+
+        .topbar-lock-btn:hover {
+          background: var(--bg-surface-hover);
+          color: var(--text-primary);
+          border-color: var(--border-strong);
         }
 
         .main-content-scroll {
@@ -237,7 +263,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           min-height: 0;
           overflow-y: auto;
           overflow-x: hidden;
-          padding: 32px 36px;
+          padding: 28px 36px;
         }
 
         @media (max-width: 1024px) {
@@ -251,7 +277,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
             display: inline-flex !important;
           }
           .main-content-scroll {
-            padding: 24px 20px;
+            padding: 20px 18px;
           }
         }
 
@@ -261,7 +287,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }
           .topbar-divider,
           .topbar-lock-btn,
-          .system-status-pill {
+          .system-status-pill,
+          .system-enclave-badge {
             display: none !important;
           }
           .main-content-scroll {

@@ -2,56 +2,46 @@
 
 import React, { useState, useMemo } from 'react';
 import { useStore } from '../../store/useStore';
-import { DigitalTwinEngine, ScenarioVariable } from '../../lib/digital-twin-engine';
+import { DigitalTwinEngine, ScenarioVariable, SimulationResult } from '../../lib/digital-twin-engine';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
-import { Cpu, Plus, RotateCcw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { ThreeFinancialCore } from '../../components/ThreeFinancialCore';
+import {
+  Cpu,
+  Plus,
+  Trash2,
+  RotateCcw,
+  Sparkles,
+  ArrowRight,
+  ArrowUpRight,
+  ArrowDownRight,
+  TrendingUp,
+  ShieldCheck,
+  CheckCircle2,
+  Zap,
+  Sliders,
+  DollarSign
+} from 'lucide-react';
+import Link from 'next/link';
 
 export default function FinancialTwinPage() {
-  const { getCurrentData } = useStore();
+  const { getCurrentData, mode } = useStore();
   const data = getCurrentData();
 
-  const [variables, setVariables] = useState<ScenarioVariable[]>([]);
+  const [variables, setVariables] = useState<ScenarioVariable[]>([
+    {
+      id: 'var_default_1',
+      name: 'Advisory Inflow Expansion',
+      type: 'addition',
+      value: 30000,
+      target: 'revenue',
+    },
+  ]);
   const [newExpense, setNewExpense] = useState('');
   const [newIncome, setNewIncome] = useState('');
+  const [reactionCounter, setReactionCounter] = useState(0);
 
-  const handleAddExpense = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newExpense || isNaN(Number(newExpense)) || Number(newExpense) <= 0) return;
-    setVariables([
-      ...variables,
-      {
-        id: Date.now().toString(),
-        name: `Additional Outflow`,
-        type: 'addition',
-        value: Number(newExpense),
-        target: 'expense',
-      },
-    ]);
-    setNewExpense('');
-  };
-
-  const handleAddIncome = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newIncome || isNaN(Number(newIncome)) || Number(newIncome) <= 0) return;
-    setVariables([
-      ...variables,
-      {
-        id: Date.now().toString(),
-        name: `Additional Inflow`,
-        type: 'addition',
-        value: Number(newIncome),
-        target: 'revenue',
-      },
-    ]);
-    setNewIncome('');
-  };
-
-  const removeVariable = (id: string) => {
-    setVariables(variables.filter((v) => v.id !== id));
-  };
-
-  // Deterministic simulation engine instantiation
-  const engine = useMemo(
+  // Deterministic engine
+  const baselineEngine = useMemo(
     () =>
       new DigitalTwinEngine({
         cashBalance: data.cash,
@@ -61,523 +51,380 @@ export default function FinancialTwinPage() {
     [data]
   );
 
-  const simulation = useMemo(() => engine.simulate(variables, 12), [engine, variables]);
-  const month12 = simulation[11];
-  const currentProjectedCash = data.cash + (data.monthlyIncome - data.monthlyExpenses) * 12;
-  const cashDelta = month12.cash - currentProjectedCash;
+  const scenarioEngine = useMemo(
+    () =>
+      new DigitalTwinEngine({
+        cashBalance: data.cash,
+        monthlyRevenue: data.monthlyIncome,
+        monthlyExpenses: data.monthlyExpenses,
+      }),
+    [data]
+  );
+
+  const baselineTrajectory = useMemo(() => baselineEngine.simulate([], 12), [baselineEngine]);
+  const simulatedTrajectory = useMemo(() => scenarioEngine.simulate(variables, 12), [scenarioEngine, variables]);
+
+  const baselineM12 = baselineTrajectory[11]?.cash ?? 0;
+  const simulatedM12 = simulatedTrajectory[11]?.cash ?? 0;
+  const cashDelta = simulatedM12 - baselineM12;
+
+  // Monthly net flows at month 12
+  const baselineNetFlow = data.monthlyIncome - data.monthlyExpenses;
+  const simulatedNetFlow = simulatedTrajectory[11]
+    ? simulatedTrajectory[11].revenue - simulatedTrajectory[11].expenses
+    : baselineNetFlow;
+
+  // Runway projection
+  const baselineRunway = data.monthlyExpenses > 0 ? Number((data.cash / data.monthlyExpenses).toFixed(1)) : 999;
+  const simulatedRunway =
+    simulatedTrajectory[0]?.expenses > 0
+      ? Number((simulatedTrajectory[0].cash / simulatedTrajectory[0].expenses).toFixed(1))
+      : baselineRunway;
+
+  const handleAddExpense = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = Number(newExpense);
+    if (!val || val <= 0) return;
+
+    setVariables([
+      ...variables,
+      {
+        id: `var_${Date.now()}`,
+        name: `Additional Outflow (+₹${val.toLocaleString('en-IN')})`,
+        type: 'addition',
+        value: val,
+        target: 'expense',
+      },
+    ]);
+    setNewExpense('');
+    setReactionCounter((prev) => prev + 1);
+  };
+
+  const handleAddIncome = (e: React.FormEvent) => {
+    e.preventDefault();
+    const val = Number(newIncome);
+    if (!val || val <= 0) return;
+
+    setVariables([
+      ...variables,
+      {
+        id: `var_${Date.now()}`,
+        name: `Additional Inflow (+₹${val.toLocaleString('en-IN')})`,
+        type: 'addition',
+        value: val,
+        target: 'revenue',
+      },
+    ]);
+    setNewIncome('');
+    setReactionCounter((prev) => prev + 1);
+  };
+
+  const handleApplyPreset = (presetName: string, target: 'revenue' | 'expense', value: number) => {
+    setVariables([
+      ...variables,
+      {
+        id: `preset_${Date.now()}`,
+        name: presetName,
+        type: 'addition',
+        value: value,
+        target: target,
+      },
+    ]);
+    setReactionCounter((prev) => prev + 1);
+  };
+
+  const removeVariable = (id: string) => {
+    setVariables(variables.filter((v) => v.id !== id));
+    setReactionCounter((prev) => prev + 1);
+  };
+
+  const resetAllVariables = () => {
+    setVariables([]);
+    setReactionCounter((prev) => prev + 1);
+  };
 
   return (
-    <div className="ft-root">
-      {/* ── Page Header ─────────────────────────────────── */}
-      <div className="ft-page-header">
-        <div className="ft-header-left">
-          <div className="ft-header-badges">
-            <span className="pill-badge pill-emerald">Deterministic Engine</span>
-            <span className="ft-sep">•</span>
-            <span className="ft-badge-sub">Zero-Hallucination Math</span>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+      {/* ── HEADER ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span className="pill-badge pill-emerald">Deterministic Digital Twin</span>
+            <span style={{ color: 'var(--text-muted)' }}>•</span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>Zero-Hallucination Math</span>
           </div>
-          <h1 className="ft-h1">Financial Digital Twin</h1>
-          <p className="ft-subtitle">
-            Simulate decisions before committing capital. Real-time deterministic scenario forecasting.
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--accent-primary-subtle)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Cpu size={22} />
+            </div>
+            <h1 style={{ fontSize: '2.1rem', fontWeight: 800 }}>Financial Digital Twin</h1>
+          </div>
+          <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            Simulate the future before committing present capital. Real-time deterministic 12-month trajectory modeling.
           </p>
         </div>
-        <div className="ft-header-right">
-          <span className="pill-badge pill-neutral ft-base-pill">
-            Base Cash: ₹{data.cash.toLocaleString('en-IN')}
-          </span>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+          <span className="pill-badge pill-neutral">Base Cash: ₹{data.cash.toLocaleString('en-IN')}</span>
+          <button type="button" onClick={resetAllVariables} className="btn-secondary" style={{ fontSize: '0.84rem' }}>
+            <RotateCcw size={14} />
+            <span>Reset Levers</span>
+          </button>
         </div>
       </div>
 
-      {/* ── Main Layout ─────────────────────────────────── */}
-      <div className="ft-layout">
+      {/* ── 3-COLUMN HERO WORKSPACE (LEVERS | 3D REACTIVE CORE | SCENARIO COMPARISON) ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr 360px', gap: '20px', alignItems: 'stretch' }} className="twin-3col-grid">
+        {/* ── LEFT COLUMN: SCENARIO LEVERS ── */}
+        <div className="glass-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <Sliders size={18} color="var(--accent-primary)" />
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Scenario Levers</h3>
+          </div>
 
-        {/* ══ LEFT: Scenario Levers ══════════════════════ */}
-        <aside className="ft-levers-col">
-        <div className="glass-panel ft-levers-card">
-          {/* Card header */}
-          <div className="ft-card-header">
-            <div className="ft-card-icon"><Cpu size={16} /></div>
-            <div className="ft-card-title-block">
-              <h3 className="ft-card-title">Scenario Levers</h3>
-              <p className="ft-card-desc">Add monthly income or expense variables to project cash runway.</p>
+          {/* Form: Add Expense */}
+          <form onSubmit={handleAddExpense} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>
+              Add Monthly Outflow (Loan, EMI, Hire)
+            </label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="number"
+                min="1000"
+                step="5000"
+                className="input-premium"
+                placeholder="Amount in ₹"
+                value={newExpense}
+                onChange={(e) => setNewExpense(e.target.value)}
+              />
+              <button type="submit" className="btn-danger" style={{ padding: '8px 14px', fontSize: '0.8rem' }}>
+                <Plus size={14} />
+                <span>Outflow</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Form: Add Inflow */}
+          <form onSubmit={handleAddIncome} style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            <label style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>
+              Add Monthly Inflow (Client, Raise)
+            </label>
+            <div style={{ display: 'flex', gap: '8px' }}>
+              <input
+                type="number"
+                min="1000"
+                step="5000"
+                className="input-premium"
+                placeholder="Amount in ₹"
+                value={newIncome}
+                onChange={(e) => setNewIncome(e.target.value)}
+              />
+              <button type="submit" className="btn-primary" style={{ padding: '8px 14px', fontSize: '0.8rem' }}>
+                <Plus size={14} />
+                <span>Inflow</span>
+              </button>
+            </div>
+          </form>
+
+          {/* Pre-Built Scenario Levers */}
+          <div>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700, marginBottom: '8px' }}>
+              One-Click Scenario Templates
+            </div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.78rem', padding: '7px 10px' }}
+                onClick={() => handleApplyPreset('Enterprise Retainer Expansion', 'revenue', 60000)}
+              >
+                <span>+ Enterprise Retainer</span>
+                <span style={{ color: 'var(--accent-primary)', fontWeight: 700 }}>+₹60k/mo</span>
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.78rem', padding: '7px 10px' }}
+                onClick={() => handleApplyPreset('Tech Lead / Senior Hire', 'expense', 45000)}
+              >
+                <span>- Senior Hire OPEX</span>
+                <span style={{ color: 'var(--danger)', fontWeight: 700 }}>-₹45k/mo</span>
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                style={{ width: '100%', justifyContent: 'space-between', fontSize: '0.78rem', padding: '7px 10px' }}
+                onClick={() => handleApplyPreset('Office Lease Upgrade', 'expense', 25000)}
+              >
+                <span>- Lease Upgrade</span>
+                <span style={{ color: 'var(--danger)', fontWeight: 700 }}>-₹25k/mo</span>
+              </button>
             </div>
           </div>
 
-          {/* Form: Add Monthly Expense */}
-          <form onSubmit={handleAddExpense} className="ft-lever-form">
-            <label className="ft-lever-label" htmlFor="ft-exp-input">
-              Monthly Outflow — Loan, Hire, EMI
-            </label>
-            <div className="ft-lever-row">
-              <input
-                id="ft-exp-input"
-                type="number" min="1" step="any"
-                value={newExpense}
-                onChange={(e) => setNewExpense(e.target.value)}
-                placeholder="Amount in ₹"
-                className="input-premium ft-lever-input"
-                autoComplete="off"
-              />
-              <button type="submit" className="ft-btn-expense" aria-label="Add expense">
-                <Plus size={14} /><span>Expense</span>
-              </button>
-            </div>
-          </form>
-
-          {/* Form: Add Monthly Income */}
-          <form onSubmit={handleAddIncome} className="ft-lever-form">
-            <label className="ft-lever-label" htmlFor="ft-inc-input">
-              Monthly Inflow — New Client, Raise
-            </label>
-            <div className="ft-lever-row">
-              <input
-                id="ft-inc-input"
-                type="number" min="1" step="any"
-                value={newIncome}
-                onChange={(e) => setNewIncome(e.target.value)}
-                placeholder="Amount in ₹"
-                className="input-premium ft-lever-input"
-                autoComplete="off"
-              />
-              <button type="submit" className="ft-btn-income" aria-label="Add income">
-                <Plus size={14} /><span>Inflow</span>
-              </button>
-            </div>
-          </form>
-
-          {/* Active Variables List */}
-          <div className="ft-active-levers">
-            <div className="ft-active-levers-header">
-              <span className="ft-active-label">Active Levers ({variables.length})</span>
-              {variables.length > 0 && (
-                <button type="button" onClick={() => setVariables([])} className="ft-reset-btn">
-                  <RotateCcw size={11} /><span>Reset All</span>
-                </button>
-              )}
+          {/* Active Variable Stack */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginTop: 'auto' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <span style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>
+                Active Scenario Levers ({variables.length})
+              </span>
             </div>
 
             {variables.length === 0 ? (
-              <div className="ft-empty-state">
-                No active scenario variables. Add levers above to simulate financial impact.
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', textAlign: 'center', padding: '12px 0' }}>
+                Baseline mode (no active levers)
               </div>
             ) : (
-              <ul className="ft-lever-list">
-                {variables.map((v) => (
-                  <li key={v.id} className="ft-lever-item">
-                    <div className="ft-lever-item-left">
-                      <span className="ft-lever-dot" style={{ background: v.target === 'expense' ? 'var(--danger)' : 'var(--accent-primary)' }} />
-                      <span className="ft-lever-name">{v.name}</span>
+              variables.map((v) => (
+                <div key={v.id} style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '8px', padding: '8px 10px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div>
+                    <div style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>{v.name}</div>
+                    <div style={{ fontSize: '0.72rem', color: v.target === 'revenue' ? 'var(--accent-primary)' : 'var(--danger)', fontWeight: 700 }}>
+                      {v.target === 'revenue' ? '+' : '-'}₹{v.value.toLocaleString('en-IN')}/mo
                     </div>
-                    <div className="ft-lever-item-right">
-                      <span className="ft-lever-value" style={{ color: v.target === 'expense' ? 'var(--danger)' : 'var(--accent-primary)' }}>
-                        {v.target === 'expense' ? '-' : '+'}₹{v.value.toLocaleString('en-IN')}
-                      </span>
-                      <button type="button" onClick={() => removeVariable(v.id)} className="ft-remove-btn" aria-label="Remove lever">×</button>
-                    </div>
-                  </li>
-                ))}
-              </ul>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => removeVariable(v.id)}
+                    style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '4px' }}
+                  >
+                    <Trash2 size={14} />
+                  </button>
+                </div>
+              ))
             )}
           </div>
         </div>
-        </aside>
 
-        {/* ══ RIGHT: Results ══════════════════════════════ */}
-        <div className="ft-results-col">
+        {/* ── CENTER COLUMN: 3D FINANCIAL CORE (REACTS ON LEVER CHANGE) ── */}
+        <div
+          className="glass-panel"
+          style={{
+            padding: '24px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            minHeight: '420px',
+          }}
+        >
+          <div style={{ position: 'absolute', top: '16px', left: '20px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <span className="status-dot" />
+            <span style={{ fontSize: '0.76rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
+              Simulation Engine Live
+            </span>
+          </div>
 
-          {/* Hero Banner */}
-          <div className="glass-hero ft-hero-banner">
-            <div className="ft-hero-left">
-              <span className="pill-badge pill-indigo ft-hero-badge">12-Month Deterministic Projection</span>
-              <h3 className="ft-hero-title">Simulated Year-End Cash</h3>
-              <p className="ft-hero-desc">Projected cash balance at Month 12 based on active scenario variables.</p>
+          <ThreeFinancialCore mode="twin" height={320} interactive reactiveTrigger={reactionCounter} />
+
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', justifyContent: 'center', marginTop: '10px' }}>
+            <span className="pill-badge pill-emerald">12-Month Cash Trajectory Synced</span>
+            <span className="pill-badge pill-indigo">{variables.length} Active Levers Applied</span>
+          </div>
+        </div>
+
+        {/* ── RIGHT COLUMN: BASELINE VS SCENARIO COMPARISON ── */}
+        <div className="glass-panel" style={{ padding: '22px', display: 'flex', flexDirection: 'column', gap: '18px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <h3 style={{ fontSize: '1.05rem', fontWeight: 700 }}>Scenario Delta</h3>
+            <span className={`pill-badge ${cashDelta >= 0 ? 'pill-emerald' : 'pill-danger'}`}>
+              {cashDelta >= 0 ? '+ Expansion' : '- Contraction'}
+            </span>
+          </div>
+
+          {/* Metric 1: Month 12 Projected Cash */}
+          <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>Month 12 Ending Cash</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 800, fontFamily: 'Outfit', color: simulatedM12 >= 0 ? 'var(--text-primary)' : 'var(--danger)', margin: '4px 0' }}>
+              ₹{simulatedM12.toLocaleString('en-IN')}
             </div>
-            <div className="ft-hero-metric">
-              <div className="ft-hero-value">
-                <AnimatedNumber value={month12.cash} format="currency" />
-              </div>
-              {variables.length > 0 && (
-                <div className="ft-hero-delta" style={{ color: cashDelta >= 0 ? 'var(--accent-primary)' : 'var(--danger)' }}>
-                  {cashDelta >= 0 ? `+₹${cashDelta.toLocaleString('en-IN')}` : `-₹${Math.abs(cashDelta).toLocaleString('en-IN')}`} vs baseline
-                </div>
-              )}
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+              Baseline: ₹{baselineM12.toLocaleString('en-IN')}
             </div>
           </div>
 
-          {/* Trajectory Comparison Cards */}
-          <div className="ft-trajectory-grid">
-            {/* Card 1: Current Trajectory (Base) */}
-            <div className="glass-panel ft-trajectory-card">
-              <div className="ft-traj-header">
-                <span className="ft-traj-label">Current Trajectory (Base)</span>
-                <span className="pill-badge pill-neutral ft-traj-badge">Baseline</span>
-              </div>
-              <div className="ft-traj-rows">
-                <div className="ft-traj-row">
-                  <span className="ft-traj-key">Monthly Net Flow</span>
-                  <span className="ft-traj-val">₹{(data.monthlyIncome - data.monthlyExpenses).toLocaleString('en-IN')}/mo</span>
-                </div>
-                <div className="ft-traj-row">
-                  <span className="ft-traj-key">Year-End Cash</span>
-                  <span className="ft-traj-val ft-traj-val-lg">₹{currentProjectedCash.toLocaleString('en-IN')}</span>
-                </div>
-                <div className="ft-traj-row">
-                  <span className="ft-traj-key">Runway Buffer</span>
-                  <span className="ft-traj-val" style={{ color: 'var(--accent-primary)' }}>{(data.cash / (data.monthlyExpenses || 1)).toFixed(1)} Months</span>
-                </div>
-              </div>
+          {/* Metric 2: Net Cash Delta */}
+          <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>12-Month Net Difference</div>
+            <div style={{ fontSize: '1.65rem', fontWeight: 800, fontFamily: 'Outfit', color: cashDelta >= 0 ? 'var(--accent-primary)' : 'var(--danger)', margin: '4px 0' }}>
+              {cashDelta >= 0 ? '+' : ''}₹{cashDelta.toLocaleString('en-IN')}
             </div>
-
-            {/* Card 2: Simulated Scenario */}
-            <div
-              className="glass-panel ft-trajectory-card"
-              style={{
-                borderColor: variables.length > 0 ? 'var(--accent-primary)' : undefined,
-                boxShadow: variables.length > 0 ? 'var(--shadow-glow)' : undefined,
-              }}
-            >
-              <div className="ft-traj-header">
-                <span className="ft-traj-label ft-traj-label-sim">Simulated Scenario</span>
-                <span className="pill-badge pill-emerald ft-traj-badge">{variables.length > 0 ? 'Dynamic Active' : 'Synced'}</span>
-              </div>
-              <div className="ft-traj-rows">
-                <div className="ft-traj-row">
-                  <span className="ft-traj-key">Simulated Net Flow</span>
-                  <span
-                    className="ft-traj-val"
-                    style={{ color: month12.revenue - month12.expenses > data.monthlyIncome - data.monthlyExpenses ? 'var(--accent-primary)' : variables.length > 0 ? 'var(--danger)' : 'var(--text-primary)' }}
-                  >
-                    ₹{(month12.revenue - month12.expenses).toLocaleString('en-IN')}/mo
-                  </span>
-                </div>
-                <div className="ft-traj-row">
-                  <span className="ft-traj-key">Simulated Year-End</span>
-                  <span className="ft-traj-val ft-traj-val-lg" style={{ color: month12.cash >= currentProjectedCash ? 'var(--accent-primary)' : 'var(--danger)' }}>
-                    ₹{month12.cash.toLocaleString('en-IN')}
-                  </span>
-                </div>
-                <div className="ft-traj-row">
-                  <span className="ft-traj-key">Simulated Runway</span>
-                  <span className="ft-traj-val" style={{ color: month12.cash < data.cash ? 'var(--danger)' : 'var(--accent-primary)' }}>
-                    {(month12.cash / (month12.expenses || 1)).toFixed(1)} Months
-                  </span>
-                </div>
-              </div>
+            <div style={{ fontSize: '0.76rem', color: cashDelta >= 0 ? 'var(--accent-primary)' : 'var(--danger)' }}>
+              {cashDelta >= 0 ? 'Surplus capital created' : 'Capital burn acceleration'}
             </div>
           </div>
 
-          {/* Risk / OK Banner */}
-          {variables.length > 0 && month12.cash < data.cash ? (
-            <div className="glass-panel ft-warning-banner">
-              <div className="ft-warning-icon"><AlertTriangle size={18} /></div>
-              <div className="ft-warning-text">
-                <div className="ft-warning-title">Liquidity Depletion Warning</div>
-                <div className="ft-warning-body">
-                  This scenario depletes reserves by ₹{(data.cash - month12.cash).toLocaleString('en-IN')} over 12 months.
-                </div>
-              </div>
+          {/* Metric 3: Runway Impact */}
+          <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px' }}>
+            <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>Simulated Runway Buffer</div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', margin: '4px 0' }}>
+              {simulatedRunway} Months
             </div>
-          ) : (
-            <div className="glass-panel ft-ok-banner">
-              <div className="ft-ok-left">
-                <CheckCircle2 size={15} color="var(--accent-primary)" style={{ flexShrink: 0 }} />
-                <span>Deterministic calculations audited with non-linear compounding logic.</span>
-              </div>
-              <span className="pill-badge pill-emerald ft-ok-badge">Mathematical Proof OK</span>
+            <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+              Baseline buffer: {baselineRunway} Months
             </div>
-          )}
+          </div>
+        </div>
+      </div>
+
+      {/* ── 12-MONTH TRAJECTORY BREAKDOWN TABLE ── */}
+      <div className="glass-panel" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px', flexWrap: 'wrap', gap: '10px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>12-Month Deterministic Trajectory Timeline</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Month-by-month cash progression comparing Baseline vs Simulated scenario</p>
+          </div>
+          <span className="pill-badge pill-emerald">DigitalTwinEngine Verified</span>
+        </div>
+
+        <div className="fin-table-container">
+          <table className="fin-table">
+            <thead>
+              <tr>
+                <th>Month</th>
+                <th>Baseline Cash</th>
+                <th>Simulated Revenue</th>
+                <th>Simulated Outflow</th>
+                <th>Simulated Cash</th>
+                <th>Monthly Delta</th>
+                <th>Solvency Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {simulatedTrajectory.map((step, idx) => {
+                const baseStep = baselineTrajectory[idx];
+                const diff = step.cash - (baseStep?.cash ?? 0);
+                return (
+                  <tr key={step.month}>
+                    <td style={{ fontWeight: 700, fontFamily: 'Outfit' }}>Month {step.month}</td>
+                    <td style={{ fontFamily: 'Outfit', color: 'var(--text-secondary)' }}>₹{baseStep?.cash.toLocaleString('en-IN')}</td>
+                    <td style={{ fontFamily: 'Outfit', color: 'var(--accent-primary)' }}>₹{step.revenue.toLocaleString('en-IN')}</td>
+                    <td style={{ fontFamily: 'Outfit', color: 'var(--danger)' }}>-₹{step.expenses.toLocaleString('en-IN')}</td>
+                    <td style={{ fontFamily: 'Outfit', fontWeight: 800, color: step.cash >= 0 ? 'var(--text-primary)' : 'var(--danger)' }}>
+                      ₹{step.cash.toLocaleString('en-IN')}
+                    </td>
+                    <td style={{ fontFamily: 'Outfit', fontWeight: 700, color: diff >= 0 ? 'var(--accent-primary)' : 'var(--danger)' }}>
+                      {diff >= 0 ? '+' : ''}₹{diff.toLocaleString('en-IN')}
+                    </td>
+                    <td>
+                      <span className={`pill-badge ${step.cash > 0 ? 'pill-emerald' : 'pill-danger'}`} style={{ fontSize: '0.62rem' }}>
+                        {step.cash > 0 ? 'Solvent' : 'Deficit Risk'}
+                      </span>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       </div>
 
       <style jsx>{`
-        /* ── Root ── */
-        .ft-root {
-          display: flex;
-          flex-direction: column;
-          gap: 28px;
-          width: 100%;
-          max-width: 1440px;
-          margin: 0 auto;
-          min-width: 0;
-        }
-
-        /* ── Header ── */
-        .ft-page-header {
-          display: flex;
-          align-items: flex-start;
-          justify-content: space-between;
-          flex-wrap: wrap;
-          gap: 16px;
-          width: 100%;
-        }
-        .ft-header-left {
-          display: flex;
-          flex-direction: column;
-          gap: 6px;
-          min-width: 0;
-          flex: 1 1 auto;
-        }
-        .ft-header-badges {
-          display: flex;
-          align-items: center;
-          flex-wrap: wrap;
-          gap: 6px;
-        }
-        .ft-sep { color: var(--text-muted); }
-        .ft-badge-sub { font-size: 0.76rem; color: var(--text-tertiary); }
-        .ft-h1 {
-          font-size: clamp(1.5rem, 2.4vw, 2rem);
-          font-weight: 700;
-          margin: 0;
-        }
-        .ft-subtitle {
-          font-size: 0.86rem;
-          color: var(--text-secondary);
-          margin: 0;
-          max-width: 480px;
-        }
-        .ft-header-right { flex-shrink: 0; padding-top: 2px; }
-        .ft-base-pill { white-space: nowrap; }
-
-        /* ── Main grid ── */
-        .ft-layout {
-          display: grid;
-          grid-template-columns: 340px minmax(0, 1fr);
-          gap: 24px;
-          width: 100%;
-          align-items: start;
-        }
-
-        /* ── Left: Levers ── */
-        .ft-levers-col { min-width: 0; width: 100%; }
-        .ft-levers-card {
-          padding: 24px;
-          display: flex;
-          flex-direction: column;
-          gap: 20px;
-          min-width: 0;
-          width: 100%;
-        }
-        .ft-card-header { display: flex; align-items: flex-start; gap: 12px; }
-        .ft-card-icon {
-          width: 32px; height: 32px; min-width: 32px;
-          border-radius: 9px;
-          background: var(--accent-primary-subtle);
-          color: var(--accent-primary);
-          display: flex; align-items: center; justify-content: center;
-          margin-top: 2px;
-        }
-        .ft-card-title-block { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-        .ft-card-title { font-size: 1.08rem; font-weight: 600; margin: 0; line-height: 1.3; }
-        .ft-card-desc { font-size: 0.8rem; color: var(--text-secondary); margin: 0; line-height: 1.45; }
-
-        /* Lever forms */
-        .ft-lever-form { display: flex; flex-direction: column; gap: 8px; }
-        .ft-lever-label {
-          font-size: 0.74rem; font-weight: 600;
-          color: var(--text-secondary);
-          letter-spacing: 0.01em; line-height: 1.3;
-        }
-        .ft-lever-row { display: flex; gap: 8px; align-items: stretch; width: 100%; }
-        .ft-lever-input {
-          flex: 1 1 auto;
-          min-width: 0;
-          padding: 10px 12px !important;
-          font-size: 0.87rem !important;
-          height: 42px;
-        }
-        .ft-btn-expense, .ft-btn-income {
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          gap: 5px;
-          flex-shrink: 0;
-          height: 42px;
-          padding: 0 14px;
-          border-radius: 12px;
-          font-size: 0.83rem; font-weight: 600;
-          font-family: 'Inter', sans-serif;
-          cursor: pointer;
-          white-space: nowrap;
-          transition: all 0.2s ease;
-          border: 1px solid;
-        }
-        .ft-btn-expense {
-          background: var(--danger-bg);
-          color: var(--danger);
-          border-color: var(--danger-border);
-        }
-        .ft-btn-expense:hover { background: rgba(239,68,68,0.18); transform: translateY(-1px); }
-        .ft-btn-income {
-          background: var(--accent-primary);
-          color: #fff;
-          border-color: rgba(255,255,255,0.15);
-          box-shadow: 0 3px 10px var(--accent-glow);
-        }
-        .ft-btn-income:hover { background: var(--accent-primary-hover); transform: translateY(-1px); }
-
-        /* Active levers */
-        .ft-active-levers {
-          border-top: 1px solid var(--border-subtle);
-          padding-top: 16px;
-          display: flex; flex-direction: column; gap: 10px;
-        }
-        .ft-active-levers-header { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
-        .ft-active-label {
-          font-size: 0.72rem; font-weight: 700;
-          text-transform: uppercase; letter-spacing: 0.06em;
-          color: var(--text-tertiary);
-        }
-        .ft-reset-btn {
-          display: inline-flex; align-items: center; gap: 4px;
-          background: transparent; border: none;
-          font-size: 0.72rem; font-weight: 600;
-          color: var(--danger); cursor: pointer;
-          padding: 4px 8px; border-radius: 6px;
-          transition: background 0.15s;
-          font-family: 'Inter', sans-serif;
-        }
-        .ft-reset-btn:hover { background: var(--danger-bg); }
-        .ft-empty-state {
-          background: var(--bg-surface-subtle);
-          border: 1px dashed var(--border-color);
-          border-radius: 12px;
-          padding: 18px 16px;
-          text-align: center;
-          font-size: 0.8rem;
-          color: var(--text-tertiary);
-          line-height: 1.5;
-        }
-        .ft-lever-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 8px; }
-        .ft-lever-item {
-          display: flex; align-items: center; justify-content: space-between;
-          gap: 10px; padding: 10px 12px;
-          border-radius: 11px;
-          background: var(--bg-surface-subtle);
-          border: 1px solid var(--border-color);
-          min-width: 0;
-        }
-        .ft-lever-item-left { display: flex; align-items: center; gap: 8px; min-width: 0; overflow: hidden; }
-        .ft-lever-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
-        .ft-lever-name { font-size: 0.83rem; font-weight: 500; color: var(--text-primary); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .ft-lever-item-right { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
-        .ft-lever-value { font-size: 0.84rem; font-weight: 700; font-family: 'Outfit', sans-serif; white-space: nowrap; }
-        .ft-remove-btn {
-          background: transparent; border: none;
-          color: var(--text-muted); cursor: pointer;
-          font-size: 1.1rem; line-height: 1;
-          width: 24px; height: 24px;
-          display: flex; align-items: center; justify-content: center;
-          border-radius: 5px; transition: color 0.15s, background 0.15s; flex-shrink: 0;
-        }
-        .ft-remove-btn:hover { color: var(--danger); background: var(--danger-bg); }
-
-        /* ── Right: Results ── */
-        .ft-results-col { display: flex; flex-direction: column; gap: 20px; min-width: 0; width: 100%; }
-
-        /* Hero */
-        .ft-hero-banner {
-          padding: 28px 32px;
-          display: flex; align-items: center; justify-content: space-between;
-          flex-wrap: wrap; gap: 20px;
-          min-width: 0; width: 100%;
-        }
-        .ft-hero-left { display: flex; flex-direction: column; gap: 6px; min-width: 0; flex: 1 1 200px; }
-        .ft-hero-badge { font-size: 0.67rem; align-self: flex-start; }
-        .ft-hero-title { font-size: clamp(1rem, 1.4vw, 1.2rem); font-weight: 600; color: var(--text-primary); margin: 0; }
-        .ft-hero-desc { font-size: 0.79rem; color: var(--text-secondary); margin: 0; line-height: 1.45; }
-        .ft-hero-metric { text-align: right; flex-shrink: 0; }
-        .ft-hero-value {
-          font-size: clamp(1.6rem, 2.6vw, 2.4rem);
-          font-weight: 800; font-family: 'Outfit', sans-serif;
-          letter-spacing: -0.025em; color: var(--text-primary); line-height: 1.1;
-        }
-        .ft-hero-delta { font-size: 0.78rem; font-weight: 600; margin-top: 4px; }
-
-        /* Trajectory grid: always 2 equal columns on desktop/tablet */
-        .ft-trajectory-grid {
-          display: grid;
-          grid-template-columns: repeat(2, minmax(0, 1fr));
-          gap: 16px;
-          width: 100%;
-        }
-        .ft-trajectory-card {
-          padding: 20px 22px;
-          display: flex; flex-direction: column; gap: 16px;
-          min-width: 0; width: 100%;
-        }
-        .ft-traj-header {
-          display: flex; align-items: center; justify-content: space-between;
-          gap: 8px; flex-wrap: wrap;
-        }
-        .ft-traj-label {
-          font-size: 0.71rem; font-weight: 700;
-          text-transform: uppercase; letter-spacing: 0.05em;
-          color: var(--text-tertiary);
-        }
-        .ft-traj-label-sim { color: var(--accent-primary); }
-        .ft-traj-badge { font-size: 0.6rem; flex-shrink: 0; }
-        .ft-traj-rows { display: flex; flex-direction: column; gap: 10px; }
-        .ft-traj-row {
-          display: flex; align-items: baseline;
-          justify-content: space-between; gap: 8px;
-          font-size: 0.83rem; min-width: 0;
-        }
-        .ft-traj-key { color: var(--text-secondary); white-space: nowrap; flex-shrink: 0; }
-        .ft-traj-val { font-weight: 600; color: var(--text-primary); text-align: right; min-width: 0; word-break: break-all; }
-        .ft-traj-val-lg { font-family: 'Outfit', sans-serif; font-weight: 700; font-size: 0.88rem; }
-
-        /* Banners */
-        .ft-warning-banner {
-          padding: 16px 20px;
-          background: var(--danger-bg);
-          border-color: var(--danger-border);
-          display: flex; align-items: flex-start; gap: 14px;
-        }
-        .ft-warning-icon { color: var(--danger); flex-shrink: 0; margin-top: 1px; }
-        .ft-warning-text { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
-        .ft-warning-title { font-size: 0.86rem; font-weight: 600; color: var(--danger); }
-        .ft-warning-body { font-size: 0.79rem; color: var(--text-secondary); line-height: 1.45; }
-        .ft-ok-banner {
-          padding: 14px 20px;
-          background: var(--bg-surface-subtle);
-          display: flex; align-items: center; justify-content: space-between;
-          flex-wrap: wrap; gap: 10px;
-        }
-        .ft-ok-left {
-          display: flex; align-items: center; gap: 9px;
-          font-size: 0.79rem; color: var(--text-secondary);
-          min-width: 0; flex: 1 1 auto;
-        }
-        .ft-ok-badge { font-size: 0.63rem; flex-shrink: 0; }
-
-        /* ── Responsive: Tablet (≤ 1100px) ── */
-        @media (max-width: 1100px) {
-          .ft-layout { grid-template-columns: 300px minmax(0, 1fr); gap: 20px; }
-        }
-
-        /* ── Responsive: Tablet portrait (≤ 900px) ── */
-        @media (max-width: 900px) {
-          .ft-layout { grid-template-columns: 1fr; gap: 20px; }
-          .ft-levers-col { width: 100%; }
-        }
-
-        /* ── Responsive: Mobile (≤ 580px) ── */
-        @media (max-width: 580px) {
-          .ft-root { gap: 20px; }
-          .ft-levers-card { padding: 18px 16px; gap: 16px; }
-          .ft-hero-banner { padding: 20px 18px; flex-direction: column; align-items: flex-start; gap: 14px; }
-          .ft-hero-metric { text-align: left; width: 100%; }
-          .ft-trajectory-grid { grid-template-columns: 1fr; }
-          .ft-trajectory-card { padding: 16px 16px; }
-          .ft-ok-banner { flex-direction: column; align-items: flex-start; }
-        }
-
-        /* ── Responsive: XS (≤ 380px) ── */
-        @media (max-width: 380px) {
-          .ft-lever-row { flex-direction: column; }
-          .ft-btn-expense, .ft-btn-income { width: 100%; height: 40px; }
-          .ft-lever-input { height: 40px !important; }
+        @media (max-width: 1080px) {
+          .twin-3col-grid {
+            grid-template-columns: 1fr !important;
+          }
         }
       `}</style>
     </div>

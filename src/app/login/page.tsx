@@ -1,11 +1,23 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from 'react';
-import Link from 'next/link';
+import React, { useState, useEffect, Suspense, useId } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Sparkles, Eye, EyeOff, ArrowRight, Shield, CheckCircle2, Lock, User, Mail, AlertCircle } from 'lucide-react';
+import {
+  Sparkles,
+  Eye,
+  EyeOff,
+  ArrowRight,
+  Shield,
+  CheckCircle2,
+  Lock,
+  User,
+  Mail,
+  AlertCircle,
+  RefreshCw,
+  TrendingUp,
+  Cpu
+} from 'lucide-react';
 import { ThreeFinancialCore } from '../../components/ThreeFinancialCore';
-import { ThemeToggle } from '../../components/ThemeToggle';
 import { useAuth } from '../../lib/auth/AuthContext';
 
 function LoginFormContent() {
@@ -21,9 +33,12 @@ function LoginFormContent() {
   const [password, setPassword] = useState('••••••••••••');
   const [fullName, setFullName] = useState('Siya Pahwa');
   const [showPassword, setShowPassword] = useState(false);
-  const [rememberMe, setRememberMe] = useState(true);
   const [isLoading, setIsLoading] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+
+  const fullNameId = useId();
+  const emailId = useId();
+  const passwordId = useId();
 
   useEffect(() => {
     if (urlError === 'unconfigured_production') {
@@ -31,7 +46,7 @@ function LoginFormContent() {
     }
   }, [urlError]);
 
-  // If user is already logged in, redirect to dashboard
+  // Redirect to dashboard if already logged in
   useEffect(() => {
     if (user && !isLoading) {
       router.push(redirectUrl);
@@ -40,210 +55,245 @@ function LoginFormContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (isLoading) return;
     setLocalError(null);
     clearError();
     setIsLoading(true);
 
-    if (authMode === 'signin') {
-      const res = await signIn(email, password);
-      setIsLoading(false);
-      if (res.success) {
-        router.push(redirectUrl);
+    try {
+      if (authMode === 'signin') {
+        const res = await signIn(email, password);
+        if (res.success) {
+          router.push(redirectUrl);
+        } else {
+          setLocalError(res.error || 'Failed to sign in. Please check your credentials.');
+        }
       } else {
-        setLocalError(res.error || 'Failed to sign in. Please verify your credentials.');
+        const res = await signUp(email, password, fullName);
+        if (res.success) {
+          router.push(redirectUrl);
+        } else {
+          setLocalError(res.error || 'Failed to create account. Please try again.');
+        }
       }
-    } else {
-      const res = await signUp(email, password, fullName);
+    } catch (err: any) {
+      setLocalError(err?.message || 'An unexpected authentication error occurred.');
+    } finally {
       setIsLoading(false);
-      if (res.success) {
-        router.push(redirectUrl);
-      } else {
-        setLocalError(res.error || 'Failed to create account. Please try again.');
-      }
     }
   };
 
   const activeError = localError || authContextError;
 
   return (
-    <div style={{ width: '100%', maxWidth: '420px' }}>
-      {/* Header */}
+    <div style={{ width: '100%', maxWidth: '440px', margin: '0 auto' }}>
+      {/* Headings */}
       <div style={{ marginBottom: '24px' }}>
-        <h1 style={{ fontSize: '2rem', fontWeight: 700, marginBottom: '8px' }}>
-          {authMode === 'signin' ? 'Welcome back' : 'Create your account'}
+        <h1
+          style={{
+            fontSize: '2.2rem',
+            fontWeight: 800,
+            letterSpacing: '-0.03em',
+            color: 'var(--text-primary)',
+            marginBottom: '6px',
+            lineHeight: 1.15,
+          }}
+        >
+          {authMode === 'signin' ? (
+            <>
+              Welcome <span style={{ color: 'var(--accent-primary)' }}>back</span>
+            </>
+          ) : (
+            <>
+              Create your <span style={{ color: 'var(--accent-primary)' }}>account</span>
+            </>
+          )}
         </h1>
-        <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary)' }}>
+        <p style={{ fontSize: '0.92rem', color: 'var(--text-secondary)' }}>
           {authMode === 'signin'
-            ? 'Sign in to access your FINFLY Financial Command Center'
+            ? 'Sign in to access your financial intelligence operating system'
             : 'Start your deterministic financial intelligence workspace'}
         </p>
       </div>
 
-      {/* Auth Mode Toggle Tabs */}
+      {/* FULL-WIDTH SEGMENTED AUTH SWITCH */}
       <div
+        role="tablist"
+        aria-label="Authentication Mode"
         style={{
-          display: 'flex',
-          background: 'var(--bg-surface-elevated)',
-          borderRadius: '12px',
+          display: 'grid',
+          gridTemplateColumns: '1fr 1fr',
+          gap: '4px',
           padding: '4px',
-          marginBottom: '20px',
+          width: '100%',
+          background: 'var(--bg-surface-subtle)',
+          borderRadius: '12px',
           border: '1px solid var(--border-color)',
+          marginBottom: '22px',
         }}
       >
         <button
           type="button"
-          className={`auth-tab-btn ${authMode === 'signin' ? 'active' : ''}`}
+          role="tab"
+          aria-selected={authMode === 'signin'}
           onClick={() => {
             setAuthMode('signin');
             setLocalError(null);
+            clearError();
+          }}
+          className={authMode === 'signin' ? 'btn-primary' : 'btn-ghost'}
+          style={{
+            borderRadius: '9px',
+            fontSize: '0.86rem',
+            padding: '8px',
           }}
         >
           Sign In
         </button>
         <button
           type="button"
-          className={`auth-tab-btn ${authMode === 'signup' ? 'active' : ''}`}
+          role="tab"
+          aria-selected={authMode === 'signup'}
           onClick={() => {
             setAuthMode('signup');
             setLocalError(null);
+            clearError();
+          }}
+          className={authMode === 'signup' ? 'btn-primary' : 'btn-ghost'}
+          style={{
+            borderRadius: '9px',
+            fontSize: '0.86rem',
+            padding: '8px',
           }}
         >
           Create Account
         </button>
       </div>
 
-      {/* Error Banner */}
+      {/* ERROR NOTICE */}
       {activeError && (
         <div
+          role="alert"
           style={{
-            display: 'flex',
-            alignItems: 'flex-start',
-            gap: '10px',
-            padding: '12px 16px',
-            borderRadius: '12px',
             background: 'var(--danger-bg)',
             border: '1px solid var(--danger-border)',
-            color: 'var(--danger)',
+            borderRadius: '10px',
+            padding: '12px 14px',
+            marginBottom: '18px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
             fontSize: '0.84rem',
-            marginBottom: '20px',
+            color: 'var(--danger)',
           }}
         >
-          <AlertCircle size={16} style={{ flexShrink: 0, marginTop: '2px' }} />
+          <AlertCircle size={16} style={{ flexShrink: 0 }} />
           <span>{activeError}</span>
         </div>
       )}
 
-      {/* Demo Mode Notice Banner in Development */}
-      {isDemoMode && (
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            padding: '10px 14px',
-            borderRadius: '10px',
-            background: 'var(--success-bg)',
-            border: '1px solid var(--success-border)',
-            color: 'var(--accent-primary)',
-            fontSize: '0.78rem',
-            fontWeight: 600,
-            marginBottom: '20px',
-          }}
-        >
-          <span>Demo Fallback Mode Active (Dev)</span>
-          <span className="pill-badge pill-emerald" style={{ fontSize: '0.65rem' }}>Local Ready</span>
-        </div>
-      )}
-
-      {/* Auth Form */}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '18px' }}>
-        {/* Full Name input (for Sign Up) */}
+      {/* FORM */}
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
         {authMode === 'signup' && (
           <div>
             <label
+              htmlFor={fullNameId}
               style={{
                 display: 'block',
-                fontSize: '0.82rem',
+                fontSize: '0.78rem',
                 fontWeight: 600,
-                color: 'var(--text-primary)',
-                marginBottom: '8px',
+                color: 'var(--text-secondary)',
+                marginBottom: '6px',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
               }}
             >
               Full Name
             </label>
-            <input
-              type="text"
-              required
-              value={fullName}
-              onChange={(e) => setFullName(e.target.value)}
-              placeholder="Siya Pahwa"
-              className="input-premium"
-            />
+            <div style={{ position: 'relative' }}>
+              <input
+                id={fullNameId}
+                type="text"
+                required
+                className="input-premium"
+                placeholder="Siya Pahwa"
+                value={fullName}
+                onChange={(e) => setFullName(e.target.value)}
+                style={{ paddingLeft: '38px' }}
+              />
+              <User
+                size={16}
+                color="var(--text-tertiary)"
+                style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)' }}
+              />
+            </div>
           </div>
         )}
 
-        {/* Email input */}
         <div>
           <label
+            htmlFor={emailId}
             style={{
               display: 'block',
-              fontSize: '0.82rem',
+              fontSize: '0.78rem',
               fontWeight: 600,
-              color: 'var(--text-primary)',
-              marginBottom: '8px',
+              color: 'var(--text-secondary)',
+              marginBottom: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
             }}
           >
             Email Address
           </label>
-          <input
-            type="email"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="name@company.com"
-            className="input-premium"
-          />
-        </div>
-
-        {/* Password input */}
-        <div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
-            <label
-              style={{
-                fontSize: '0.82rem',
-                fontWeight: 600,
-                color: 'var(--text-primary)',
-              }}
-            >
-              Password
-            </label>
-            {authMode === 'signin' && (
-              <button
-                type="button"
-                onClick={() => alert('Password reset instructions sent to registered recovery channel.')}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  fontSize: '0.78rem',
-                  fontWeight: 500,
-                  color: 'var(--accent-primary)',
-                  cursor: 'pointer',
-                  padding: 0,
-                }}
-              >
-                Forgot password?
-              </button>
-            )}
-          </div>
           <div style={{ position: 'relative' }}>
             <input
+              id={emailId}
+              type="email"
+              required
+              className="input-premium"
+              placeholder="siya.pahwa@finfly.ai"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              style={{ paddingLeft: '38px' }}
+            />
+            <Mail
+              size={16}
+              color="var(--text-tertiary)"
+              style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)' }}
+            />
+          </div>
+        </div>
+
+        <div>
+          <label
+            htmlFor={passwordId}
+            style={{
+              display: 'block',
+              fontSize: '0.78rem',
+              fontWeight: 600,
+              color: 'var(--text-secondary)',
+              marginBottom: '6px',
+              textTransform: 'uppercase',
+              letterSpacing: '0.04em',
+            }}
+          >
+            Password
+          </label>
+          <div style={{ position: 'relative' }}>
+            <input
+              id={passwordId}
               type={showPassword ? 'text' : 'password'}
               required
+              className="input-premium"
+              placeholder="••••••••••••"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder="Enter secure password"
-              className="input-premium"
-              style={{ paddingRight: '44px' }}
+              style={{ paddingLeft: '38px', paddingRight: '40px' }}
+            />
+            <Lock
+              size={16}
+              color="var(--text-tertiary)"
+              style={{ position: 'absolute', left: '13px', top: '50%', transform: 'translateY(-50%)' }}
             />
             <button
               type="button"
@@ -258,60 +308,58 @@ function LoginFormContent() {
                 border: 'none',
                 color: 'var(--text-tertiary)',
                 cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
+                padding: '4px',
               }}
             >
-              {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+              {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
             </button>
           </div>
         </div>
 
-        {/* Remember Me toggle */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-          <input
-            type="checkbox"
-            id="rememberMe"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-            style={{
-              accentColor: 'var(--accent-primary)',
-              width: '16px',
-              height: '16px',
-              cursor: 'pointer',
-            }}
-          />
-          <label
-            htmlFor="rememberMe"
-            style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', cursor: 'pointer' }}
-          >
-            Keep this device trusted for 30 days
-          </label>
-        </div>
-
-        {/* Submit Button */}
+        {/* SUBMIT BUTTON */}
         <button
           type="submit"
           disabled={isLoading}
           className="btn-primary"
           style={{
             width: '100%',
-            padding: '14px',
-            fontSize: '0.96rem',
-            letterSpacing: '0.01em',
-            marginTop: '6px',
+            padding: '12px',
+            fontSize: '0.94rem',
+            fontWeight: 700,
+            marginTop: '8px',
           }}
         >
           {isLoading ? (
-            <span>Authenticating secure enclave...</span>
+            <>
+              <RefreshCw size={16} className="animate-spin" />
+              <span>Verifying Credentials...</span>
+            </>
           ) : (
             <>
-              <span>{authMode === 'signin' ? 'Sign In' : 'Create Account'}</span>
-              <ArrowRight size={18} />
+              <span>{authMode === 'signin' ? 'Sign In to FINFLY OS' : 'Create Verified Workspace'}</span>
+              <ArrowRight size={16} />
             </>
           )}
         </button>
       </form>
+
+      {/* SECURITY FOOTER */}
+      <div
+        style={{
+          marginTop: '24px',
+          paddingTop: '16px',
+          borderTop: '1px solid var(--border-subtle)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '8px',
+          fontSize: '0.76rem',
+          color: 'var(--text-tertiary)',
+        }}
+      >
+        <Shield size={14} color="var(--accent-primary)" />
+        <span>Hardware Enclave Protected • Cryptographically Signed</span>
+      </div>
     </div>
   );
 }
@@ -321,228 +369,100 @@ export default function LoginPage() {
     <div
       style={{
         minHeight: '100vh',
-        width: '100vw',
-        display: 'flex',
-        position: 'relative',
-        overflow: 'hidden',
+        width: '100%',
+        display: 'grid',
+        gridTemplateColumns: '1.15fr 1fr',
+        background: 'var(--bg-base)',
       }}
+      className="login-root-grid"
     >
-      {/* Top right theme switcher */}
+      {/* LEFT COLUMN: BRANDING & 3D FINANCIAL CORE */}
       <div
         style={{
-          position: 'absolute',
-          top: '24px',
-          right: '28px',
-          zIndex: 50,
+          background: 'var(--bg-surface-glass)',
+          borderRight: '1px solid var(--border-color)',
+          padding: '48px 56px',
           display: 'flex',
-          alignItems: 'center',
-          gap: '12px',
+          flexDirection: 'column',
+          justifyContent: 'space-between',
+          position: 'relative',
+          overflow: 'hidden',
         }}
+        className="login-left-col"
       >
-        <ThemeToggle />
-      </div>
-
-      {/* Responsive 2-Column Split */}
-      <div
-        className="login-container"
-        style={{
-          display: 'flex',
-          width: '100%',
-          minHeight: '100vh',
-        }}
-      >
-        {/* ==========================================================
-            LEFT COLUMN: CINEMATIC 3D VISUAL & BRAND EXPERIENCE
-            ========================================================== */}
-        <div
-          className="login-visual-panel"
-          style={{
-            flex: '1.15',
-            background: 'linear-gradient(145deg, var(--bg-surface-glass) 0%, var(--bg-surface-subtle) 100%)',
-            borderRight: '1px solid var(--border-color)',
-            padding: '48px 56px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'space-between',
-            position: 'relative',
-            overflow: 'hidden',
-          }}
-        >
-          {/* Brand header */}
-          <div style={{ position: 'relative', zIndex: 10 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
-              <div
-                style={{
-                  width: '38px',
-                  height: '38px',
-                  borderRadius: '12px',
-                  background: 'linear-gradient(135deg, var(--accent-primary) 0%, #047857 100%)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: '0 4px 14px var(--accent-glow)',
-                  color: '#ffffff',
-                }}
-              >
-                <Sparkles size={20} strokeWidth={2.4} />
-              </div>
-              <span
-                style={{
-                  fontFamily: 'Outfit',
-                  fontWeight: 800,
-                  fontSize: '1.6rem',
-                  letterSpacing: '0.04em',
-                  color: 'var(--text-primary)',
-                }}
-              >
-                FINFLY
-              </span>
-            </div>
-            <p
-              style={{
-                fontFamily: 'Outfit',
-                fontSize: '1.25rem',
-                fontWeight: 500,
-                color: 'var(--text-secondary)',
-                letterSpacing: '-0.01em',
-              }}
-            >
-              Your financial system. Understood.
-            </p>
-          </div>
-
-          {/* Center: Interactive 3D Financial Nexus */}
-          <div
-            style={{
-              position: 'relative',
-              width: '100%',
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              margin: '20px 0',
-            }}
-          >
-            <ThreeFinancialCore mode="login" height={380} interactive />
-
-            {/* Floating Live Financial Nodes Indicator */}
+        {/* Brand Header */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px', marginBottom: '8px' }}>
             <div
               style={{
+                width: '38px',
+                height: '38px',
+                borderRadius: '11px',
+                background: 'linear-gradient(135deg, var(--accent-primary) 0%, #047857 100%)',
                 display: 'flex',
-                gap: '8px',
-                flexWrap: 'wrap',
+                alignItems: 'center',
                 justifyContent: 'center',
-                marginTop: '12px',
+                boxShadow: '0 4px 14px var(--accent-glow)',
+                color: '#ffffff',
               }}
             >
-              <span className="pill-badge pill-emerald">● Cash Buffer</span>
-              <span className="pill-badge pill-gold">● Investments</span>
-              <span className="pill-badge pill-neutral">● Goals</span>
-              <span className="pill-badge pill-indigo">● Growth Engine</span>
+              <Sparkles size={20} strokeWidth={2.4} />
             </div>
+            <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.4rem', letterSpacing: '0.04em' }}>
+              FINFLY
+            </span>
           </div>
-
-          {/* Bottom Security / Trust Statement */}
-          <div
-            style={{
-              position: 'relative',
-              zIndex: 10,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '16px 20px',
-              borderRadius: '16px',
-              background: 'var(--bg-surface-glass)',
-              border: '1px solid var(--border-color)',
-              backdropFilter: 'var(--glass-blur)',
-            }}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <div
-                style={{
-                  width: '28px',
-                  height: '28px',
-                  borderRadius: '8px',
-                  background: 'var(--accent-primary-subtle)',
-                  color: 'var(--accent-primary)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                }}
-              >
-                <Shield size={16} strokeWidth={2.2} />
-              </div>
-              <div>
-                <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                  SOC2 Type II &amp; Multi-Tenant Row Level Security
-                </div>
-                <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>
-                  Deterministic accounting engine — strictly non-hallucinatory
-                </div>
-              </div>
-            </div>
-
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '0.75rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
-              <CheckCircle2 size={14} />
-              Active
-            </div>
-          </div>
+          <p style={{ fontSize: '0.88rem', color: 'var(--text-tertiary)' }}>
+            Financial Intelligence Operating System
+          </p>
         </div>
 
-        {/* ==========================================================
-            RIGHT COLUMN: PREMIUM AUTHENTICATION AREA
-            ========================================================== */}
-        <div
-          className="login-auth-panel"
-          style={{
-            flex: '0.95',
-            padding: '48px 56px',
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'center',
-            alignItems: 'center',
-            position: 'relative',
-          }}
-        >
-          <Suspense fallback={<div style={{ color: 'var(--text-tertiary)', fontSize: '0.9rem' }}>Loading secure login enclave...</div>}>
-            <LoginFormContent />
-          </Suspense>
+        {/* Medium-sized 3D Financial Core */}
+        <div style={{ margin: '20px 0', display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+          <ThreeFinancialCore mode="login" height={320} interactive />
         </div>
+
+        {/* Trust Pillars */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '12px' }}>
+          <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+            <div style={{ color: 'var(--accent-primary)', marginBottom: '4px' }}><Shield size={16} /></div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>Deterministic</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Zero-Hallucination Math</div>
+          </div>
+          <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+            <div style={{ color: 'var(--indigo-accent)', marginBottom: '4px' }}><Cpu size={16} /></div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>Digital Twin</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>12-Month Simulation</div>
+          </div>
+          <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+            <div style={{ color: 'var(--gold-accent)', marginBottom: '4px' }}><TrendingUp size={16} /></div>
+            <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>Enclave Security</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Supabase RLS Protected</div>
+          </div>
+        </div>
+      </div>
+
+      {/* RIGHT COLUMN: SPACIOUS AUTHENTICATION CARD */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          padding: '40px 32px',
+        }}
+      >
+        <Suspense fallback={<div style={{ color: 'var(--text-tertiary)' }}>Loading authentication...</div>}>
+          <LoginFormContent />
+        </Suspense>
       </div>
 
       <style jsx>{`
-        .auth-tab-btn {
-          flex: 1;
-          padding: 8px;
-          border: none;
-          background: transparent;
-          color: var(--text-secondary);
-          font-size: 0.85rem;
-          font-weight: 600;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s ease;
-        }
-        .auth-tab-btn:hover {
-          color: var(--text-primary);
-        }
-        .auth-tab-btn.active {
-          background: var(--bg-surface);
-          color: var(--text-primary);
-          box-shadow: var(--shadow-sm);
-        }
         @media (max-width: 960px) {
-          .login-container {
-            flex-direction: column !important;
+          .login-root-grid {
+            grid-template-columns: 1fr !important;
           }
-          .login-visual-panel {
-            flex: none !important;
-            padding: 40px 24px !important;
-            min-height: 440px;
-          }
-          .login-auth-panel {
-            flex: none !important;
-            padding: 40px 24px !important;
+          .login-left-col {
+            display: none !important;
           }
         }
       `}</style>

@@ -1,43 +1,68 @@
 'use client';
 
 import React, { useState, useMemo } from 'react';
-import { 
-  syntheticRazorpayRecords, 
-  syntheticBankTransactions, 
-  RazorpayRecord, 
-  BankTransaction 
+import { useStore } from '../../store/useStore';
+import {
+  syntheticRazorpayRecords,
+  syntheticBankTransactions,
+  RazorpayRecord,
+  BankTransaction
 } from '../../lib/reconciliation-dataset';
+import { runReconciliationAudit } from '../../lib/finance-tools';
 import { AnimatedNumber } from '../../components/AnimatedNumber';
-import { 
-  CheckCircle2, AlertTriangle, AlertCircle, 
-  Search, Filter, ChevronRight, Activity, Receipt, ArrowRightLeft, FileSearch, Check
+import {
+  CheckCircle2,
+  AlertTriangle,
+  AlertCircle,
+  Search,
+  Filter,
+  ChevronRight,
+  Activity,
+  Receipt,
+  FileSearch,
+  Check,
+  X,
+  RefreshCw,
+  Lock,
+  ArrowRight,
+  SlidersHorizontal,
+  ExternalLink,
+  ShieldCheck
 } from 'lucide-react';
+import Link from 'next/link';
 
-type MatchStatus = 'MATCHED' | 'AMOUNT_DISCREPANCY' | 'DUPLICATE' | 'MISSING_IN_BANK' | 'UNKNOWN_BANK_TXN';
+type MatchStatus = 'MATCHED' | 'MDR_FEE_VARIANCE' | 'DUPLICATE' | 'MISSING_IN_BANK' | 'UNKNOWN_BANK_TXN';
 
-interface ReconciliationResult {
+interface ReconciliationRow {
   id: string;
   status: MatchStatus;
   gatewayRecord?: RazorpayRecord;
   duplicateRecords?: RazorpayRecord[];
   bankTransaction?: BankTransaction;
   confidence: number;
+  difference?: number;
+  note: string;
   decisionTrace: string[];
 }
 
 export default function ReconciliationPage() {
-  const [filter, setFilter] = useState<'ALL' | 'MATCHED' | 'EXCEPTIONS'>('ALL');
-  const [expandedId, setExpandedId] = useState<string | null>(null);
+  const { approvedReconciliations, approveReconciliation, rejectedReconciliations, rejectReconciliation } = useStore();
 
-  // Deterministic Matching Engine
+  const [filter, setFilter] = useState<'ALL' | 'MATCHED' | 'EXCEPTIONS'>('ALL');
+  const [selectedRecord, setSelectedRecord] = useState<ReconciliationRow | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [auditTimestamp, setAuditTimestamp] = useState<string>(new Date().toLocaleTimeString());
+  const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  // Deterministic Reconciliation Engine
   const reconciliationData = useMemo(() => {
-    const results: ReconciliationResult[] = [];
+    const results: ReconciliationRow[] = [];
     const usedBankTxns = new Set<string>();
-    
+
     // Group gateway records by ID to catch duplicates
     const gatewayRecordsById = new Map<string, RazorpayRecord[]>();
-    syntheticRazorpayRecords.forEach(r => {
-      if (r.status === 'failed') return; // Ignore failed payments
+    syntheticRazorpayRecords.forEach((r) => {
+      if (r.status === 'failed') return;
       if (!gatewayRecordsById.has(r.id)) {
         gatewayRecordsById.set(r.id, []);
       }
@@ -48,42 +73,52 @@ export default function ReconciliationPage() {
       const primaryRecord = records[0];
       const isDuplicate = records.length > 1;
       const expectedAmount = primaryRecord.type === 'refund' ? -primaryRecord.amount : primaryRecord.amount;
-      
-      // Find matching bank txn
+
       let matchedBank: BankTransaction | undefined;
       let status: MatchStatus = 'MISSING_IN_BANK';
       let confidence = 0;
-      const trace: string[] = [`Analyzing Gateway Record: ${rzId} (${primaryRecord.type}, ${primaryRecord.amount} ${primaryRecord.currency})`];
+      let difference = 0;
+      let note = '';
+      const trace: string[] = [
+        `[Step 1] Ingested Gateway Record: ${rzId} (${primaryRecord.type}, ₹${primaryRecord.amount} ${primaryRecord.currency})`,
+      ];
 
       if (isDuplicate) {
-        trace.push(`WARNING: Multiple records found with same ID (${records.length} occurrences)`);
+        trace.push(`[Step 2] Webhook anomaly: Found ${records.length} duplicate callbacks with ID ${rzId}`);
       }
 
-      // Try exact amount match first
-      matchedBank = syntheticBankTransactions.find(bt => !usedBankTxns.has(bt.id) && bt.amount === expectedAmount);
-      
+      // Exact match
+      matchedBank = syntheticBankTransactions.find((bt) => !usedBankTxns.has(bt.id) && bt.amount === expectedAmount);
+
       if (matchedBank) {
         status = isDuplicate ? 'DUPLICATE' : 'MATCHED';
-        confidence = 100;
-        trace.push(`Exact amount match found in Bank Ledger: ${matchedBank.id}`);
+        confidence = isDuplicate ? 65 : 100;
+        note = isDuplicate
+          ? `Duplicate gateway webhook received (${records.length}x). Single bank settlement verified.`
+          : `Exact mathematical match confirmed between gateway capture and bank statement.`;
+        trace.push(`[Step 3] Bank settlement pair verified: Bank Txn ${matchedBank.id} (₹${matchedBank.amount})`);
         usedBankTxns.add(matchedBank.id);
       } else {
-        // Try amount discrepancy match (within 5% difference)
-        trace.push(`No exact amount match found. Searching for close amounts...`);
-        matchedBank = syntheticBankTransactions.find(bt => {
+        // Amount variance (MDR fee within 5%)
+        const feeMatch = syntheticBankTransactions.find((bt) => {
           if (usedBankTxns.has(bt.id)) return false;
           const diff = Math.abs(bt.amount - expectedAmount);
-          return diff > 0 && diff <= Math.abs(expectedAmount * 0.05); // max 5% fee
+          return diff > 0 && diff <= Math.abs(expectedAmount * 0.05);
         });
 
-        if (matchedBank) {
-          status = isDuplicate ? 'DUPLICATE' : 'AMOUNT_DISCREPANCY';
-          confidence = 85;
-          trace.push(`Fuzzy match found: ${matchedBank.id} (Bank: ${matchedBank.amount}, Gateway: ${expectedAmount})`);
-          trace.push(`Difference of ${Math.abs(matchedBank.amount - expectedAmount)} flagged as potential MDR/Fee.`);
-          usedBankTxns.add(matchedBank.id);
+        if (feeMatch) {
+          difference = Math.abs(feeMatch.amount - expectedAmount);
+          status = isDuplicate ? 'DUPLICATE' : 'MDR_FEE_VARIANCE';
+          confidence = 88;
+          note = `Bank settled ₹${feeMatch.amount} vs expected ₹${expectedAmount}. Discrepancy of ₹${difference} flagged as gateway MDR fee.`;
+          trace.push(`[Step 3] Fuzzy fee match: Bank Txn ${feeMatch.id} has ₹${difference} MDR deduction variance.`);
+          usedBankTxns.add(feeMatch.id);
+          matchedBank = feeMatch;
         } else {
-          trace.push(`No corresponding bank transaction found.`);
+          status = 'MISSING_IN_BANK';
+          confidence = 0;
+          note = `Gateway capture of ₹${primaryRecord.amount} has no matching bank settlement credit.`;
+          trace.push(`[Step 3] Unresolved: No bank credit ledger record exists for this gateway capture.`);
         }
       }
 
@@ -94,267 +129,438 @@ export default function ReconciliationPage() {
         duplicateRecords: isDuplicate ? records.slice(1) : undefined,
         bankTransaction: matchedBank,
         confidence,
-        decisionTrace: trace
+        difference,
+        note,
+        decisionTrace: trace,
       });
     });
 
-    // Check for unmatched bank txns
-    syntheticBankTransactions.forEach(bt => {
+    // Unrecognized bank transactions
+    syntheticBankTransactions.forEach((bt) => {
       if (!usedBankTxns.has(bt.id)) {
         results.push({
           id: bt.id,
           status: 'UNKNOWN_BANK_TXN',
           bankTransaction: bt,
           confidence: 0,
+          difference: bt.amount,
+          note: `Unrecognized bank credit of ₹${bt.amount} with description "${bt.description}".`,
           decisionTrace: [
-            `Analyzing Bank Transaction: ${bt.id} (${bt.amount})`,
-            `No corresponding gateway record found. Unrecognized settlement.`
-          ]
+            `[Step 1] Ingested Bank Statement Txn: ${bt.id} (₹${bt.amount})`,
+            `[Step 2] Scanned gateway telemetry: No matching payment intent or capture found.`,
+          ],
         });
       }
     });
 
     return results;
-  }, []);
+  }, [auditTimestamp]);
 
+  // Filtered dataset
   const filteredData = useMemo(() => {
-    if (filter === 'ALL') return reconciliationData;
-    if (filter === 'MATCHED') return reconciliationData.filter(d => d.status === 'MATCHED');
-    return reconciliationData.filter(d => d.status !== 'MATCHED');
-  }, [filter, reconciliationData]);
+    return reconciliationData.filter((item) => {
+      // Status filter
+      if (filter === 'MATCHED' && item.status !== 'MATCHED') return false;
+      if (filter === 'EXCEPTIONS' && item.status === 'MATCHED') return false;
+
+      // Search query
+      if (searchQuery.trim()) {
+        const q = searchQuery.toLowerCase();
+        const matchId = item.id.toLowerCase().includes(q);
+        const matchDesc = item.note.toLowerCase().includes(q);
+        const matchBank = item.bankTransaction?.description.toLowerCase().includes(q);
+        if (!matchId && !matchDesc && !matchBank) return false;
+      }
+      return true;
+    });
+  }, [reconciliationData, filter, searchQuery]);
 
   // Metrics
   const totalRecords = reconciliationData.length;
-  const matchedRecords = reconciliationData.filter(d => d.status === 'MATCHED').length;
-  const matchRate = totalRecords > 0 ? (matchedRecords / totalRecords) * 100 : 0;
-  const exceptionsCount = totalRecords - matchedRecords;
+  const matchedRecords = reconciliationData.filter((d) => d.status === 'MATCHED' || approvedReconciliations.has(d.id)).length;
+  const exceptionRecords = totalRecords - matchedRecords;
+  const matchRate = totalRecords > 0 ? Number(((matchedRecords / totalRecords) * 100).toFixed(1)) : 0;
 
-  const handleApprove = (e: React.MouseEvent, id: string) => {
-    e.stopPropagation();
-    // Simulate approval action
-    alert(`Match approved and written to ledger for ID: ${id}`);
+  const handleApproveMatch = (id: string) => {
+    approveReconciliation(id);
+    setActionNotice(`Match ${id} approved and posted to verified general ledger.`);
+    if (selectedRecord && selectedRecord.id === id) {
+      setSelectedRecord({ ...selectedRecord, confidence: 100 });
+    }
   };
 
-  const getStatusBadge = (status: MatchStatus) => {
-    switch(status) {
-      case 'MATCHED': return <span className="pill-badge pill-emerald"><CheckCircle2 size={12} className="mr-1"/> Exact Match</span>;
-      case 'AMOUNT_DISCREPANCY': return <span className="pill-badge pill-gold"><AlertTriangle size={12} className="mr-1"/> Amount Discrepancy</span>;
-      case 'DUPLICATE': return <span className="pill-badge pill-indigo"><Activity size={12} className="mr-1"/> Duplicate Record</span>;
-      case 'MISSING_IN_BANK': return <span className="pill-badge pill-neutral"><AlertCircle size={12} className="mr-1"/> Missing in Bank</span>;
-      case 'UNKNOWN_BANK_TXN': return <span className="pill-badge pill-neutral"><FileSearch size={12} className="mr-1"/> Unknown Bank Txn</span>;
-      default: return null;
+  const handleRejectMatch = (id: string) => {
+    rejectReconciliation(id);
+    setActionNotice(`Record ${id} flagged as rejected settlement.`);
+  };
+
+  const handleRerunAudit = () => {
+    setAuditTimestamp(new Date().toLocaleTimeString());
+    setActionNotice('Two-way reconciliation audit re-evaluated across gateway and bank ledger.');
+  };
+
+  const getStatusBadge = (status: MatchStatus, id: string) => {
+    if (approvedReconciliations.has(id)) {
+      return <span className="pill-badge pill-emerald"><CheckCircle2 size={12} /> Approved Match</span>;
+    }
+    if (rejectedReconciliations.has(id)) {
+      return <span className="pill-badge pill-danger"><AlertCircle size={12} /> Rejected</span>;
+    }
+
+    switch (status) {
+      case 'MATCHED':
+        return <span className="pill-badge pill-emerald"><CheckCircle2 size={12} /> Verified Match</span>;
+      case 'MDR_FEE_VARIANCE':
+        return <span className="pill-badge pill-gold"><AlertTriangle size={12} /> MDR Fee Variance</span>;
+      case 'DUPLICATE':
+        return <span className="pill-badge pill-gold"><AlertTriangle size={12} /> Duplicate Webhook</span>;
+      case 'MISSING_IN_BANK':
+        return <span className="pill-badge pill-danger"><AlertCircle size={12} /> Missing in Bank</span>;
+      case 'UNKNOWN_BANK_TXN':
+        return <span className="pill-badge pill-danger"><AlertCircle size={12} /> Unrecognized Bank Credit</span>;
     }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
-      
-      {/* HEADER & METRICS */}
-      <div className="glass-hero" style={{ padding: '36px 40px', display: 'flex', flexDirection: 'column', gap: '28px' }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+      {/* ── HEADER ── */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '8px' }}>
-            <span className="pill-badge pill-emerald">Deterministic Engine Active</span>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+            <span className="pill-badge pill-emerald">Two-Way Matching Engine</span>
+            <span style={{ color: 'var(--text-muted)' }}>•</span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>Last Audit: {auditTimestamp}</span>
           </div>
-          <h1 style={{ fontSize: '2.1rem', fontWeight: 700, letterSpacing: '-0.02em', marginBottom: '8px' }}>
-            Reconciliation Command Center
-          </h1>
-          <p style={{ color: 'var(--text-tertiary)', fontSize: '0.95rem' }}>
-            Two-way cryptographic match between gateway telemetry and bank settlements.
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--accent-primary-subtle)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <Receipt size={22} />
+            </div>
+            <h1 style={{ fontSize: '2.1rem', fontWeight: 800 }}>Two-Way Reconciliation &amp; Audit Workspace</h1>
+          </div>
+          <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
+            Automated cryptographic matching between Razorpay gateway capture telemetries and bank settlement ledgers.
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Auto-Match Rate</span>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-primary)', margin: '4px 0' }}>
-              <AnimatedNumber value={matchRate} format="percentage" />
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--accent-primary)' }}>High Confidence</div>
-          </div>
-          
-          <div className="glass-panel" style={{ padding: '20px' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Total Records Processed</span>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-primary)', margin: '4px 0' }}>
-              <AnimatedNumber value={totalRecords} format="number" />
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Gateway + Bank</div>
-          </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button type="button" onClick={handleRerunAudit} className="btn-primary" style={{ fontSize: '0.84rem' }}>
+            <RefreshCw size={15} />
+            <span>Re-Run Audit</span>
+          </button>
+          <Link href="/finance-controller" className="btn-secondary" style={{ fontSize: '0.84rem' }}>
+            Ask Controller
+          </Link>
+        </div>
+      </div>
 
-          <div className="glass-panel" style={{ padding: '20px', borderLeft: exceptionsCount > 0 ? '3px solid var(--gold-accent)' : '' }}>
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', textTransform: 'uppercase', fontWeight: 600 }}>Unresolved Exceptions</span>
-            <div style={{ fontSize: '1.8rem', fontWeight: 700, fontFamily: 'Outfit', color: exceptionsCount > 0 ? 'var(--gold-accent)' : 'var(--accent-primary)', margin: '4px 0' }}>
-              <AnimatedNumber value={exceptionsCount} format="number" />
-            </div>
-            <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>Require manual review</div>
+      {/* ── ACTION NOTICE TOAST ── */}
+      {actionNotice && (
+        <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--accent-primary)', borderRadius: '12px', padding: '12px 18px', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            <CheckCircle2 size={16} color="var(--accent-primary)" />
+            <span style={{ fontSize: '0.86rem', color: 'var(--text-primary)', fontWeight: 600 }}>{actionNotice}</span>
+          </div>
+          <button type="button" onClick={() => setActionNotice(null)} style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer' }}>
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
+      {/* ── KPI METRICS STRIP ── */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px' }}>
+        <div className="glass-panel" style={{ padding: '20px 22px' }}>
+          <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700, letterSpacing: '0.05em' }}>
+            Automated Match Rate
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--accent-primary)', margin: '4px 0' }}>
+            {matchRate}%
+          </div>
+          <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+            {matchedRecords} of {totalRecords} records resolved
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '20px 22px' }}>
+          <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700, letterSpacing: '0.05em' }}>
+            Unresolved Exceptions
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'Outfit', color: exceptionRecords > 0 ? 'var(--gold-accent)' : 'var(--accent-primary)', margin: '4px 0' }}>
+            {exceptionRecords} Items
+          </div>
+          <div style={{ fontSize: '0.76rem', color: 'var(--gold-accent)' }}>
+            Requires controller inspection
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '20px 22px' }}>
+          <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700, letterSpacing: '0.05em' }}>
+            Gateway Records Scanned
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', margin: '4px 0' }}>
+            {syntheticRazorpayRecords.length}
+          </div>
+          <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+            Razorpay Webhook Stream
+          </div>
+        </div>
+
+        <div className="glass-panel" style={{ padding: '20px 22px' }}>
+          <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700, letterSpacing: '0.05em' }}>
+            Bank Settlements Processed
+          </div>
+          <div style={{ fontSize: '1.75rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', margin: '4px 0' }}>
+            {syntheticBankTransactions.length}
+          </div>
+          <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
+            Direct HDFC/Axis Statement Feed
           </div>
         </div>
       </div>
 
-      {/* RECONCILIATION WORKFLOW */}
-      <div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '20px', flexWrap: 'wrap', gap: '16px' }}>
-          <h2 style={{ fontSize: '1.25rem', fontWeight: 600 }}>Transaction Trace</h2>
-          
-          <div style={{ display: 'flex', gap: '8px', background: 'var(--bg-surface-elevated)', padding: '4px', borderRadius: '12px', border: '1px solid var(--border-color)' }}>
-            <button 
-              className={`filter-btn ${filter === 'ALL' ? 'active' : ''}`}
-              onClick={() => setFilter('ALL')}
-            >
-              All
-            </button>
-            <button 
-              className={`filter-btn ${filter === 'MATCHED' ? 'active' : ''}`}
-              onClick={() => setFilter('MATCHED')}
-            >
-              Matched
-            </button>
-            <button 
-              className={`filter-btn ${filter === 'EXCEPTIONS' ? 'active' : ''}`}
-              onClick={() => setFilter('EXCEPTIONS')}
-            >
-              Exceptions <span style={{ background: 'var(--gold-bg)', color: 'var(--gold-accent)', padding: '2px 6px', borderRadius: '999px', fontSize: '0.65rem', marginLeft: '4px' }}>{exceptionsCount}</span>
-            </button>
-          </div>
+      {/* ── FILTER CONTROLS & SEARCH ── */}
+      <div className="glass-panel" style={{ padding: '20px 24px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
+        {/* Segmented Filter Buttons */}
+        <div style={{ display: 'flex', gap: '6px', background: 'var(--bg-surface-subtle)', padding: '4px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+          <button
+            type="button"
+            className={filter === 'ALL' ? 'btn-primary' : 'btn-ghost'}
+            style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+            onClick={() => setFilter('ALL')}
+          >
+            All Records ({totalRecords})
+          </button>
+          <button
+            type="button"
+            className={filter === 'MATCHED' ? 'btn-primary' : 'btn-ghost'}
+            style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+            onClick={() => setFilter('MATCHED')}
+          >
+            Matched Pairs ({matchedRecords})
+          </button>
+          <button
+            type="button"
+            className={filter === 'EXCEPTIONS' ? 'btn-primary' : 'btn-ghost'}
+            style={{ fontSize: '0.8rem', padding: '6px 14px' }}
+            onClick={() => setFilter('EXCEPTIONS')}
+          >
+            Exceptions ({exceptionRecords})
+          </button>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-          {filteredData.map(res => {
-            const isExpanded = expandedId === res.id;
-            return (
-              <div 
-                key={res.id} 
-                className="glass-panel" 
-                style={{ 
-                  padding: '20px', 
-                  cursor: 'pointer',
-                  borderLeft: res.status !== 'MATCHED' ? '3px solid var(--gold-accent)' : '3px solid var(--accent-primary)',
-                  transition: 'all 0.2s ease'
-                }}
-                onClick={() => setExpandedId(isExpanded ? null : res.id)}
+        {/* Search Input */}
+        <div style={{ position: 'relative', minWidth: '260px' }}>
+          <input
+            type="text"
+            className="input-premium"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Search record ID or reason..."
+            style={{ paddingLeft: '36px', fontSize: '0.86rem' }}
+          />
+          <Search size={15} color="var(--text-tertiary)" style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)' }} />
+        </div>
+      </div>
+
+      {/* ── RECONCILIATION DATA TABLE ── */}
+      <div className="glass-panel" style={{ padding: '24px' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+          <div>
+            <h3 style={{ fontSize: '1.15rem', fontWeight: 700 }}>Two-Way Ledger Matching Register</h3>
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>Click any row to open the Deep Technical Exception Inspector</p>
+          </div>
+          <span className="pill-badge pill-neutral">Showing {filteredData.length} records</span>
+        </div>
+
+        <div className="fin-table-container">
+          <table className="fin-table">
+            <thead>
+              <tr>
+                <th>Entity ID</th>
+                <th>Gateway Record</th>
+                <th>Bank Settlement</th>
+                <th>Expected vs Actual</th>
+                <th>Status</th>
+                <th>Confidence</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredData.map((item) => (
+                <tr
+                  key={item.id}
+                  onClick={() => setSelectedRecord(item)}
+                  style={{ cursor: 'pointer' }}
+                >
+                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                    {item.id}
+                  </td>
+                  <td>
+                    {item.gatewayRecord ? (
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{item.gatewayRecord.type.toUpperCase()}</div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>₹{item.gatewayRecord.amount} ({item.gatewayRecord.status})</div>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>None (Direct Bank Txn)</span>
+                    )}
+                  </td>
+                  <td>
+                    {item.bankTransaction ? (
+                      <div>
+                        <div style={{ fontWeight: 600 }}>{item.bankTransaction.id}</div>
+                        <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>₹{item.bankTransaction.amount}</div>
+                      </div>
+                    ) : (
+                      <span style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 600 }}>Unsettled in Bank</span>
+                    )}
+                  </td>
+                  <td>
+                    <div style={{ fontFamily: 'Outfit', fontWeight: 700 }}>
+                      {item.difference && item.difference > 0 ? (
+                        <span style={{ color: 'var(--gold-accent)' }}>Δ ₹{item.difference}</span>
+                      ) : (
+                        <span style={{ color: 'var(--accent-primary)' }}>Exact Match (₹0)</span>
+                      )}
+                    </div>
+                  </td>
+                  <td>{getStatusBadge(item.status, item.id)}</td>
+                  <td>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                      <span style={{ fontFamily: 'Outfit', fontWeight: 700 }}>{approvedReconciliations.has(item.id) ? 100 : item.confidence}%</span>
+                      <ChevronRight size={14} color="var(--text-tertiary)" />
+                    </div>
+                  </td>
+                  <td onClick={(e) => e.stopPropagation()}>
+                    <div style={{ display: 'flex', gap: '6px' }}>
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                        onClick={() => handleApproveMatch(item.id)}
+                        title="Approve match into verified general ledger"
+                      >
+                        <Check size={12} />
+                        <span>Approve</span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      {/* ── DEEP TECHNICAL EXCEPTION INSPECTION SLIDE-OVER DRAWER ── */}
+      {selectedRecord && (
+        <div className="drawer-backdrop" onClick={() => setSelectedRecord(null)}>
+          <div className="drawer-content" onClick={(e) => e.stopPropagation()}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '1px solid var(--border-color)', paddingBottom: '14px' }}>
+              <div>
+                <span className="pill-badge pill-emerald" style={{ marginBottom: '4px' }}>Deep Technical Audit</span>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: 800 }}>Exception Inspector</h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedRecord(null)}
+                style={{ background: 'transparent', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: '4px' }}
               >
-                {/* Row Header */}
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
-                    <div style={{ width: '40px', height: '40px', borderRadius: '10px', background: 'var(--bg-surface-elevated)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
-                      <ArrowRightLeft size={18} />
-                    </div>
-                    <div>
-                      <div style={{ fontWeight: 600, fontSize: '1.05rem', color: 'var(--text-primary)' }}>{res.id}</div>
-                      <div style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-                        {res.gatewayRecord ? `Gateway: ${res.gatewayRecord.type}` : 'Bank Txn'}
-                      </div>
-                    </div>
+                <X size={20} />
+              </button>
+            </div>
+
+            {/* Entity Summary */}
+            <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700, marginBottom: '6px' }}>
+                Reconciliation Target
+              </div>
+              <div style={{ fontSize: '1.1rem', fontWeight: 800, fontFamily: 'var(--font-mono)', color: 'var(--text-primary)' }}>
+                {selectedRecord.id}
+              </div>
+              <div style={{ marginTop: '8px' }}>
+                {getStatusBadge(selectedRecord.status, selectedRecord.id)}
+              </div>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', marginTop: '10px', lineHeight: 1.5 }}>
+                {selectedRecord.note}
+              </p>
+            </div>
+
+            {/* Gateway vs Bank Payload Breakdown */}
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '12px' }}>
+              <div style={{ background: 'var(--bg-surface-subtle)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+                <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>Gateway Webhook Payload</div>
+                {selectedRecord.gatewayRecord ? (
+                  <div style={{ fontSize: '0.8rem', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div><strong>Type:</strong> {selectedRecord.gatewayRecord.type}</div>
+                    <div><strong>Amount:</strong> ₹{selectedRecord.gatewayRecord.amount}</div>
+                    <div><strong>Status:</strong> {selectedRecord.gatewayRecord.status}</div>
+                    <div><strong>Currency:</strong> {selectedRecord.gatewayRecord.currency}</div>
+                    <div><strong>Created:</strong> {selectedRecord.gatewayRecord.created_at}</div>
                   </div>
-                  
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
-                    <div style={{ textAlign: 'right' }}>
-                      <div style={{ fontWeight: 600, fontFamily: 'Outfit', fontSize: '1.1rem' }}>
-                        {res.gatewayRecord ? `₹${res.gatewayRecord.amount}` : (res.bankTransaction ? `₹${res.bankTransaction.amount}` : '-')}
-                      </div>
-                      <div style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)' }}>Expected Amount</div>
-                    </div>
-                    {getStatusBadge(res.status)}
-                    <ChevronRight size={18} style={{ color: 'var(--text-tertiary)', transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)', transition: 'transform 0.2s' }} />
-                  </div>
-                </div>
-
-                {/* Expanded Detail Panel */}
-                {isExpanded && (
-                  <div style={{ marginTop: '24px', paddingTop: '20px', borderTop: '1px solid var(--border-subtle)', display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: '24px' }}>
-                    
-                    {/* Decision Trace Log */}
-                    <div style={{ background: 'var(--bg-surface-elevated)', borderRadius: '12px', padding: '16px', border: '1px solid var(--border-color)' }}>
-                      <h4 style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)', textTransform: 'uppercase', marginBottom: '12px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                        <Activity size={14} /> Append-only Decision Trace
-                      </h4>
-                      <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
-                        {res.decisionTrace.map((log, i) => (
-                          <div key={i} style={{ display: 'flex', gap: '8px', fontSize: '0.8rem', color: 'var(--text-tertiary)', fontFamily: 'monospace' }}>
-                            <span style={{ color: 'var(--accent-primary)' }}>[{String(i+1).padStart(2, '0')}]</span>
-                            <span>{log}</span>
-                          </div>
-                        ))}
-                        <div style={{ marginTop: '8px', paddingTop: '8px', borderTop: '1px dashed var(--border-color)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '0.8rem', fontWeight: 600, color: 'var(--text-primary)' }}>Confidence Score</span>
-                          <span className={res.confidence === 100 ? "pill-badge pill-emerald" : "pill-badge pill-gold"}>{res.confidence}%</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    {/* Data Comparison & Actions */}
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-                       <div style={{ display: 'flex', gap: '16px' }}>
-                          {res.gatewayRecord && (
-                            <div style={{ flex: 1, padding: '12px', background: 'rgba(5, 150, 105, 0.05)', borderRadius: '8px', border: '1px solid var(--success-border)' }}>
-                              <div style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Gateway Record</div>
-                              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{res.gatewayRecord.id}</div>
-                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>₹{res.gatewayRecord.amount} • {res.gatewayRecord.status}</div>
-                            </div>
-                          )}
-                          {res.bankTransaction && (
-                            <div style={{ flex: 1, padding: '12px', background: 'rgba(99, 102, 241, 0.05)', borderRadius: '8px', border: '1px solid rgba(99, 102, 241, 0.2)' }}>
-                              <div style={{ fontSize: '0.7rem', color: 'var(--indigo-accent)', textTransform: 'uppercase', fontWeight: 600, marginBottom: '4px' }}>Bank Settlement</div>
-                              <div style={{ fontSize: '0.9rem', fontWeight: 600 }}>{res.bankTransaction.id}</div>
-                              <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>₹{res.bankTransaction.amount}</div>
-                            </div>
-                          )}
-                       </div>
-
-                       {/* Action Buttons for Exceptions */}
-                       {res.status !== 'MATCHED' && (
-                         <div style={{ display: 'flex', gap: '12px', marginTop: 'auto' }}>
-                           <button 
-                             className="btn-primary" 
-                             style={{ flex: 1, fontSize: '0.85rem', padding: '8px', display: 'flex', justifyContent: 'center', gap: '6px' }}
-                             onClick={(e) => handleApprove(e, res.id)}
-                           >
-                             <Check size={14} /> Approve Match
-                           </button>
-                           <button className="btn-secondary" style={{ flex: 1, fontSize: '0.85rem', padding: '8px' }}>
-                             Flag Issue
-                           </button>
-                         </div>
-                       )}
-                    </div>
-
-                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--text-muted)', marginTop: '6px' }}>No Gateway Webhook</div>
                 )}
               </div>
-            );
-          })}
 
-          {filteredData.length === 0 && (
-            <div style={{ padding: '40px', textAlign: 'center', color: 'var(--text-secondary)' }}>
-              No records found for this filter.
+              <div style={{ background: 'var(--bg-surface-subtle)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
+                <div style={{ fontSize: '0.72rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700 }}>Bank Settlement Record</div>
+                {selectedRecord.bankTransaction ? (
+                  <div style={{ fontSize: '0.8rem', marginTop: '6px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                    <div><strong>Txn ID:</strong> {selectedRecord.bankTransaction.id}</div>
+                    <div><strong>Amount:</strong> ₹{selectedRecord.bankTransaction.amount}</div>
+                    <div><strong>Desc:</strong> {selectedRecord.bankTransaction.description}</div>
+                    <div><strong>Date:</strong> {selectedRecord.bankTransaction.date}</div>
+                  </div>
+                ) : (
+                  <div style={{ fontSize: '0.8rem', color: 'var(--danger)', fontWeight: 600, marginTop: '6px' }}>Missing in Bank</div>
+                )}
+              </div>
             </div>
-          )}
-        </div>
-      </div>
 
-      <style jsx>{`
-        .filter-btn {
-          background: transparent;
-          border: none;
-          padding: 6px 12px;
-          border-radius: 8px;
-          font-size: 0.85rem;
-          font-weight: 500;
-          color: var(--text-secondary);
-          cursor: pointer;
-          transition: all 0.2s ease;
-          display: flex;
-          align-items: center;
-        }
-        .filter-btn:hover {
-          color: var(--text-primary);
-        }
-        .filter-btn.active {
-          background: var(--bg-surface);
-          color: var(--text-primary);
-          box-shadow: var(--shadow-sm);
-        }
-        .mr-1 { margin-right: 4px; }
-      `}</style>
+            {/* Cryptographic Proof & Decision Trace */}
+            <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '16px' }}>
+              <div style={{ fontSize: '0.74rem', textTransform: 'uppercase', color: 'var(--text-tertiary)', fontWeight: 700, marginBottom: '8px' }}>
+                Deterministic Decision Trace
+              </div>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', fontFamily: 'var(--font-mono)', fontSize: '0.78rem', color: 'var(--accent-primary)' }}>
+                {selectedRecord.decisionTrace.map((step, idx) => (
+                  <div key={idx} style={{ background: 'var(--bg-surface-subtle)', padding: '6px 10px', borderRadius: '6px' }}>
+                    {step}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Drawer Actions */}
+            <div style={{ display: 'flex', gap: '10px', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid var(--border-color)' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                style={{ flex: 1 }}
+                onClick={() => {
+                  handleApproveMatch(selectedRecord.id);
+                  setSelectedRecord(null);
+                }}
+              >
+                <Check size={16} />
+                <span>Approve Match</span>
+              </button>
+
+              <button
+                type="button"
+                className="btn-danger"
+                onClick={() => {
+                  handleRejectMatch(selectedRecord.id);
+                  setSelectedRecord(null);
+                }}
+              >
+                <X size={16} />
+                <span>Flag Exception</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

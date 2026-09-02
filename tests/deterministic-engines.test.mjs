@@ -11,7 +11,14 @@ import {
   calculateTaxProjection,
 } from '../src/lib/finance-tools.ts';
 import { FinanceControllerOrchestrator } from '../src/lib/finance-controller-orchestrator.ts';
-import { personalData, businessData } from '../src/lib/mock-data.ts';
+import {
+  personalData,
+  businessData,
+  sampleTransactions,
+  sampleInvestments,
+  sampleBusinessInvoices,
+  sampleUpcomingObligations,
+} from '../src/lib/mock-data.ts';
 import { syntheticRazorpayRecords, syntheticBankTransactions } from '../src/lib/reconciliation-dataset.ts';
 
 // -------------------------------------------------------------
@@ -123,6 +130,11 @@ test('calculateTaxProjection: Correctly computes FY 2024-25 new regime slabs and
   assert.equal(highIncome.data.taxableIncome, 2085000); // 21.6L - 75k std deduction
   assert.ok(highIncome.data.totalPayableWithCess > 0);
   assert.ok(highIncome.data.effectiveTaxRatePct > 10);
+
+  // Test Old Regime deductions
+  const oldRegimeIncome = calculateTaxProjection(2160000, 150000 + 25000 + 120000, 'old');
+  assert.equal(oldRegimeIncome.data.taxableIncome, 2160000 - 50000 - 295000);
+  assert.ok(oldRegimeIncome.data.totalPayableWithCess > 0);
 });
 
 // -------------------------------------------------------------
@@ -139,4 +151,21 @@ test('FinanceControllerOrchestrator: Generates strictly grounded Decision Traces
   assert.ok(response.decisionTrace.groundedMetrics.length >= 2);
   assert.ok(response.stagedAction, 'Should offer safe staged proposal requiring human approval');
   assert.equal(response.stagedAction.requiresHumanApproval, true);
+});
+
+// -------------------------------------------------------------
+// 6. Dataset Single Source of Truth & Affordability Integrity Tests
+// -------------------------------------------------------------
+test('Dataset & Personal CA: Transaction, investment, and invoice datasets maintain strict invariants', () => {
+  assert.ok(sampleTransactions.length >= 8);
+  assert.ok(sampleInvestments.length >= 4);
+  assert.ok(sampleBusinessInvoices.length >= 4);
+  assert.ok(sampleUpcomingObligations.length >= 4);
+
+  // Verify Personal mode cash buffer supports major purchase threshold
+  const purchaseAmount = 150000;
+  const postPurchaseCash = personalData.cash - purchaseAmount;
+  const postPurchaseRunway = postPurchaseCash / personalData.monthlyExpenses;
+  assert.ok(postPurchaseCash > 0);
+  assert.ok(postPurchaseRunway >= 3.0, 'Personal CA buffer remains safe for ₹1.5L purchase');
 });

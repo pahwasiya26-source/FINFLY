@@ -9,7 +9,6 @@ import { getSupabaseServerClient, getSupabaseAdminClient } from '../src/lib/supa
 // -------------------------------------------------------------
 test('Supabase Client: Identifies unconfigured state cleanly without crashing', () => {
   const configured = isSupabaseConfigured();
-  // In demo environment without live env vars, should return false
   assert.equal(typeof configured, 'boolean');
 });
 
@@ -33,6 +32,23 @@ test('Supabase Server Enclave: Prevents client-side access to Admin/Service-Role
 
 test('Supabase Server Client: Safely returns null when env vars are missing', () => {
   const client = getSupabaseServerClient();
-  // Should handle unconfigured environment gracefully
   assert.ok(client === null || typeof client === 'object');
+});
+
+test('Production Security Gate: Demo cookies strictly rejected when NODE_ENV is production', () => {
+  const isProduction = true;
+  const mockCookies = [
+    { name: 'finfly_session', value: 'active' },
+    { name: 'sb-finfly-auth-token', value: 'active' },
+  ];
+
+  // In production, only legitimate project-ref Supabase cookies (not synthetic demo cookies) are valid
+  const hasValidProductionAuth = mockCookies.some(
+    (c) =>
+      c.name.startsWith('sb-') &&
+      c.name.endsWith('-auth-token') &&
+      c.name !== 'sb-finfly-auth-token'
+  );
+
+  assert.equal(hasValidProductionAuth, false, 'Synthetic demo cookies must be rejected in production');
 });

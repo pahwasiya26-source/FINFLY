@@ -158,6 +158,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Development demo sign-in
     localStorage.removeItem('finfly_demo_auth');
+    if (typeof document !== 'undefined') {
+      document.cookie = 'sb-finfly-auth-token=active; path=/; max-age=86400; SameSite=Lax';
+      document.cookie = 'finfly_session=active; path=/; max-age=86400; SameSite=Lax';
+    }
     setUser(DEMO_USER);
     setProfile(DEMO_PROFILE);
     return { success: true };
@@ -207,6 +211,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // Development demo sign-up
     localStorage.removeItem('finfly_demo_auth');
+    if (typeof document !== 'undefined') {
+      document.cookie = 'sb-finfly-auth-token=active; path=/; max-age=86400; SameSite=Lax';
+      document.cookie = 'finfly_session=active; path=/; max-age=86400; SameSite=Lax';
+    }
     const demoUser: User = {
       ...DEMO_USER,
       email,
@@ -224,6 +232,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     if (isDemoMode) {
       localStorage.setItem('finfly_demo_auth', 'logged_out');
+    }
+    if (typeof document !== 'undefined') {
+      document.cookie = 'sb-finfly-auth-token=; path=/; max-age=0; SameSite=Lax';
+      document.cookie = 'finfly_session=; path=/; max-age=0; SameSite=Lax';
     }
     setUser(null);
     setProfile(null);

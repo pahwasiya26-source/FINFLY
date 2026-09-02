@@ -13,35 +13,64 @@ import {
   ShieldCheck,
   Bot,
   FileText,
-  Boxes,
   Lock,
   Settings,
   Sparkles,
   ChevronRight,
+  UserCheck,
 } from 'lucide-react';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '../lib/auth/AuthContext';
 
-export interface NavItem {
-  name: string;
-  href: string;
-  icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string; color?: string }>;
-  badge?: string;
+export interface NavSection {
+  title: string;
+  items: Array<{
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ size?: number; strokeWidth?: number; className?: string; color?: string }>;
+    badge?: string;
+    badgeColor?: 'emerald' | 'gold' | 'indigo' | 'neutral';
+  }>;
 }
 
-export const navItems: NavItem[] = [
-  { name: 'Overview', href: '/', icon: LayoutDashboard },
-  { name: 'Money Flow', href: '/money-flow', icon: ArrowLeftRight },
-  { name: 'Investments', href: '/investments', icon: TrendingUp },
-  { name: 'Business', href: '/business', icon: Briefcase },
-  { name: 'Taxes', href: '/taxes', icon: Receipt },
-  { name: 'Financial Twin', href: '/financial-twin', icon: Cpu, badge: 'Deterministic' },
-  { name: 'Finance Controller', href: '/finance-controller', icon: ShieldCheck },
-  { name: 'AI CFO', href: '/ai-cfo', icon: Bot, badge: 'Zero-Hallucination' },
-  { name: 'Reports', href: '/reports', icon: FileText },
-  { name: 'AI Agents', href: '/ai-agents', icon: Boxes },
-  { name: 'Privacy Center', href: '/privacy-center', icon: Lock },
-  { name: 'Settings', href: '/settings', icon: Settings },
+export const navSections: NavSection[] = [
+  {
+    title: 'Command Center',
+    items: [
+      { name: 'Overview', href: '/', icon: LayoutDashboard },
+    ],
+  },
+  {
+    title: 'Personal Finance',
+    items: [
+      { name: 'Personal CA', href: '/personal-ca', icon: UserCheck, badge: 'Private Office', badgeColor: 'emerald' },
+      { name: 'Money Flow', href: '/money-flow', icon: ArrowLeftRight },
+      { name: 'Investments', href: '/investments', icon: TrendingUp },
+      { name: 'Financial Twin', href: '/financial-twin', icon: Cpu, badge: 'Deterministic', badgeColor: 'indigo' },
+    ],
+  },
+  {
+    title: 'Enterprise & Control',
+    items: [
+      { name: 'Business', href: '/business', icon: Briefcase },
+      { name: 'Finance Controller', href: '/finance-controller', icon: ShieldCheck, badge: 'Zero-Hallucination', badgeColor: 'emerald' },
+      { name: 'Reconciliation', href: '/reconciliation', icon: Receipt },
+    ],
+  },
+  {
+    title: 'Planning & Audit',
+    items: [
+      { name: 'Taxes', href: '/taxes', icon: Receipt },
+      { name: 'Reports', href: '/reports', icon: FileText },
+    ],
+  },
+  {
+    title: 'System',
+    items: [
+      { name: 'Settings', href: '/settings', icon: Settings },
+      { name: 'Privacy & Enclave', href: '/privacy-center', icon: Lock },
+    ],
+  },
 ];
 
 interface MainNavigationProps {
@@ -63,7 +92,7 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
         backdropFilter: 'var(--glass-blur)',
         WebkitBackdropFilter: 'var(--glass-blur)',
         borderRight: '1px solid var(--border-color)',
-        padding: '24px 18px',
+        padding: '20px 16px',
         position: 'sticky',
         top: 0,
         zIndex: 40,
@@ -71,7 +100,7 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
       }}
     >
       {/* Brand Header */}
-      <div style={{ padding: '0 8px 20px 8px', borderBottom: '1px solid var(--border-subtle)' }}>
+      <div style={{ padding: '0 6px 16px 6px', borderBottom: '1px solid var(--border-subtle)' }}>
         <Link 
           href="/" 
           onClick={onNavigate}
@@ -116,143 +145,137 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
               />
             </div>
             <div style={{ fontSize: '0.72rem', color: 'var(--text-tertiary)', letterSpacing: '0.02em', fontWeight: 500 }}>
-              AI Financial OS
+              Financial Intelligence OS
             </div>
           </div>
         </Link>
       </div>
 
-      {/* Nav List */}
+      {/* Nav List with Organized Sections */}
       <nav
         style={{
           flex: 1,
           overflowY: 'auto',
-          margin: '16px -8px',
-          padding: '0 8px',
+          margin: '12px -6px',
+          padding: '0 6px',
           display: 'flex',
           flexDirection: 'column',
-          gap: '3px',
+          gap: '14px',
         }}
       >
-        <div
-          style={{
-            fontSize: '0.7rem',
-            fontWeight: 700,
-            textTransform: 'uppercase',
-            letterSpacing: '0.08em',
-            color: 'var(--text-muted)',
-            padding: '8px 12px 4px 12px',
-          }}
-        >
-          Core Platform
-        </div>
-
-        {navItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href !== '/' && pathname.startsWith(item.href)) ||
-            (item.href === '/financial-twin' && pathname.startsWith('/digital-twin')) ||
-            (item.href === '/finance-controller' && pathname.startsWith('/reconciliation')) ||
-            (item.href === '/ai-agents' && pathname.startsWith('/agents')) ||
-            (item.href === '/privacy-center' && pathname.startsWith('/privacy'));
-
-          const Icon = item.icon;
-
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              onClick={onNavigate}
+        {navSections.map((section) => (
+          <div key={section.title} style={{ display: 'flex', flexDirection: 'column', gap: '2px' }}>
+            <div
               style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                padding: '9px 12px',
-                borderRadius: '10px',
-                textDecoration: 'none',
-                color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
-                background: isActive ? 'var(--bg-surface-elevated)' : 'transparent',
-                fontWeight: isActive ? 600 : 450,
-                fontSize: '0.88rem',
-                border: isActive ? '1px solid var(--border-strong)' : '1px solid transparent',
-                boxShadow: isActive ? 'var(--shadow-xs)' : 'none',
-                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-                position: 'relative',
+                fontSize: '0.68rem',
+                fontWeight: 700,
+                textTransform: 'uppercase',
+                letterSpacing: '0.08em',
+                color: 'var(--text-muted)',
+                padding: '4px 10px',
               }}
             >
-              <div style={{ display: 'flex', alignItems: 'center', gap: '11px' }}>
-                <div
+              {section.title}
+            </div>
+
+            {section.items.map((item) => {
+              const isActive =
+                pathname === item.href ||
+                (item.href !== '/' && pathname.startsWith(item.href)) ||
+                (item.href === '/financial-twin' && pathname.startsWith('/digital-twin')) ||
+                (item.href === '/privacy-center' && pathname.startsWith('/privacy'));
+
+              const Icon = item.icon;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  onClick={onNavigate}
                   style={{
-                    color: isActive ? 'var(--accent-primary)' : 'var(--text-tertiary)',
                     display: 'flex',
                     alignItems: 'center',
+                    justifyContent: 'space-between',
+                    padding: '8px 10px',
+                    borderRadius: '9px',
+                    textDecoration: 'none',
+                    color: isActive ? 'var(--text-primary)' : 'var(--text-secondary)',
+                    background: isActive ? 'var(--bg-surface-elevated)' : 'transparent',
+                    fontWeight: isActive ? 600 : 450,
+                    fontSize: '0.86rem',
+                    border: isActive ? '1px solid var(--border-strong)' : '1px solid transparent',
+                    boxShadow: isActive ? 'var(--shadow-xs)' : 'none',
+                    transition: 'all 0.15s cubic-bezier(0.16, 1, 0.3, 1)',
                   }}
                 >
-                  <Icon size={18} strokeWidth={isActive ? 2.2 : 1.7} />
-                </div>
-                <span>{item.name}</span>
-              </div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+                    <div
+                      style={{
+                        color: isActive ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+                        display: 'flex',
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Icon size={17} strokeWidth={isActive ? 2.2 : 1.7} />
+                    </div>
+                    <span>{item.name}</span>
+                  </div>
 
-              {item.badge ? (
-                <span
-                  style={{
-                    fontSize: '0.65rem',
-                    fontWeight: 600,
-                    padding: '2px 6px',
-                    borderRadius: '6px',
-                    background: isActive ? 'var(--accent-primary-subtle)' : 'var(--bg-surface-hover)',
-                    color: isActive ? 'var(--accent-primary)' : 'var(--text-tertiary)',
-                    border: '1px solid var(--border-subtle)',
-                  }}
-                >
-                  {item.badge}
-                </span>
-              ) : isActive ? (
-                <ChevronRight size={14} color="var(--text-tertiary)" />
-              ) : null}
-            </Link>
-          );
-        })}
+                  {item.badge ? (
+                    <span
+                      className={`pill-badge pill-${item.badgeColor || 'neutral'}`}
+                      style={{ fontSize: '0.62rem', padding: '1px 6px' }}
+                    >
+                      {item.badge}
+                    </span>
+                  ) : isActive ? (
+                    <ChevronRight size={14} color="var(--text-tertiary)" />
+                  ) : null}
+                </Link>
+              );
+            })}
+          </div>
+        ))}
       </nav>
 
       {/* Sidebar Footer */}
       <div
         style={{
-          paddingTop: '14px',
+          paddingTop: '12px',
           borderTop: '1px solid var(--border-subtle)',
           display: 'flex',
           flexDirection: 'column',
-          gap: '12px',
+          gap: '10px',
         }}
       >
-        {/* Theme control row */}
+        {/* Appearance Control */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 4px' }}>
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
+          <span style={{ fontSize: '0.75rem', color: 'var(--text-tertiary)', fontWeight: 500 }}>
             Appearance
           </span>
           <ThemeToggle compact />
         </div>
 
-        {/* User Card */}
+        {/* User Profile Card */}
         <div
           style={{
             display: 'flex',
             alignItems: 'center',
             gap: '10px',
             padding: '8px 10px',
-            borderRadius: '12px',
+            borderRadius: '10px',
             background: 'var(--bg-surface-subtle)',
             border: '1px solid var(--border-subtle)',
           }}
         >
           <div
             style={{
-              width: '32px',
-              height: '32px',
+              width: '30px',
+              height: '30px',
               borderRadius: '50%',
               background: 'linear-gradient(135deg, #4f46e5 0%, #059669 100%)',
               color: '#fff',
-              fontSize: '0.82rem',
+              fontSize: '0.8rem',
               fontWeight: 700,
               display: 'flex',
               alignItems: 'center',
@@ -272,8 +295,8 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
             <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>
               {profile?.fullName || 'Siya Pahwa'}
             </div>
-            <div style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', fontWeight: 500 }}>
-              ● {user ? 'Verified Enterprise' : 'Guest'}
+            <div style={{ fontSize: '0.68rem', color: 'var(--accent-primary)', fontWeight: 500 }}>
+              ● {user ? 'Verified Enterprise' : 'Demo Workspace'}
             </div>
           </div>
         </div>

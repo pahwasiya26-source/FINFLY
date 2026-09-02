@@ -5,6 +5,7 @@
 
 const ROUTES = [
   '/',
+  '/personal-ca',
   '/money-flow',
   '/investments',
   '/business',
