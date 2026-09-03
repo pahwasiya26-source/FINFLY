@@ -69,5 +69,6 @@ console.log(`   Total Tax + Cess:  ₹${taxResult.data.totalPayableWithCess.toLo
 console.log(`   Status:            ${taxResult.data.disclaimer}\n`);
 
 console.log('======================================================');
-console.log('✅ ALL DETERMINISTIC FINANCIAL PROOFS VERIFIED — 3 RECONCILIATION EXCEPTIONS CORRECTLY IDENTIFIED');
+console.log('✅ ALL DETERMINISTIC FINANCIAL PROOFS VERIFIED');
+console.log('   Status: PASS — 3 reconciliation exceptions correctly identified');
 console.log('======================================================\n');

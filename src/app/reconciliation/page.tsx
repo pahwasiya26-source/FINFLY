@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { useStore } from '../../store/useStore';
 import {
   syntheticRazorpayRecords,
@@ -51,8 +51,12 @@ export default function ReconciliationPage() {
   const [filter, setFilter] = useState<'ALL' | 'MATCHED' | 'EXCEPTIONS'>('ALL');
   const [selectedRecord, setSelectedRecord] = useState<ReconciliationRow | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [auditTimestamp, setAuditTimestamp] = useState<string>(new Date().toLocaleTimeString());
+  const [auditTimestamp, setAuditTimestamp] = useState<string>('Live Scan Active');
   const [actionNotice, setActionNotice] = useState<string | null>(null);
+
+  useEffect(() => {
+    setAuditTimestamp(new Date().toLocaleTimeString());
+  }, []);
 
   // Deterministic Reconciliation Engine
   const reconciliationData = useMemo(() => {

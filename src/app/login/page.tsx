@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, Suspense, useId, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import {
   Sparkles,
   Eye,
@@ -386,25 +387,38 @@ function LoginFormContent() {
         </div>
 
         <div>
-          <label
-            htmlFor={passwordId}
-            style={{
-              display: 'block',
-              fontSize: '0.78rem',
-              fontWeight: 600,
-              color: 'var(--text-secondary)',
-              marginBottom: '6px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.04em',
-            }}
-          >
-            Password
-          </label>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
+            <label
+              htmlFor={passwordId}
+              style={{
+                display: 'block',
+                fontSize: '0.78rem',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Password
+            </label>
+            <Link
+              href="/forgot-password"
+              style={{
+                fontSize: '0.78rem',
+                color: 'var(--accent-primary)',
+                textDecoration: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Forgot password?
+            </Link>
+          </div>
           <div style={{ position: 'relative' }}>
             <input
               id={passwordId}
               type={showPassword ? 'text' : 'password'}
               required
+              autoComplete={authMode === 'signup' ? 'new-password' : 'current-password'}
               className="input-premium"
               placeholder="••••••••••••"
               value={password}
@@ -462,6 +476,64 @@ function LoginFormContent() {
             </>
           )}
         </button>
+
+        {/* AUTH NAVIGATION UX */}
+        <div
+          style={{
+            textAlign: 'center',
+            fontSize: '0.84rem',
+            color: 'var(--text-tertiary)',
+            marginTop: '6px',
+          }}
+        >
+          {authMode === 'signup' ? (
+            <span>
+              Already have an account?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('signin');
+                  setLocalError(null);
+                  clearError();
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  color: 'var(--accent-primary)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.84rem',
+                }}
+              >
+                Sign in
+              </button>
+            </span>
+          ) : (
+            <span>
+              Need an account?{' '}
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthMode('signup');
+                  setLocalError(null);
+                  clearError();
+                }}
+                style={{
+                  background: 'none',
+                  border: 'none',
+                  padding: 0,
+                  color: 'var(--accent-primary)',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  fontSize: '0.84rem',
+                }}
+              >
+                Create account
+              </button>
+            </span>
+          )}
+        </div>
       </form>
 
       {/* SECURITY FOOTER */}

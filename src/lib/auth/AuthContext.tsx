@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { User, Session } from '@supabase/supabase-js';
 import { getSupabaseBrowserClient, isSupabaseConfigured } from '../supabase/client';
-import { getAuthCallbackUrl } from './site-url';
+import { getAuthCallbackUrl, getSiteUrl } from './site-url';
 import { useStore } from '../../store/useStore';
 
 export interface UserProfile {
@@ -27,6 +27,8 @@ interface AuthContextType {
     fullName?: string
   ) => Promise<{ success: boolean; requiresConfirmation?: boolean; error?: string }>;
   signOut: () => Promise<void>;
+  resetPasswordForEmail: (email: string) => Promise<{ success: boolean; error?: string }>;
+  updatePassword: (newPassword: string) => Promise<{ success: boolean; error?: string }>;
   clearError: () => void;
 }
 
@@ -382,6 +384,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
   };
 
+  const resetPasswordForEmail = async (email: string): Promise<{ success: boolean; error?: string }> => {
+    setError(null);
+    const supabase = getSupabaseBrowserClient();
+
+    if (supabase) {
+      const callbackUrl = `${getSiteUrl()}/auth/callback?next=/reset-password`;
+
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: callbackUrl,
+      });
+
+      if (resetError) {
+        let userFriendlyMsg = resetError.message;
+        if (resetError.message.toLowerCase().includes('rate limit')) {
+          userFriendlyMsg =
+            'Email delivery rate limit reached. Please wait a few minutes before trying again.';
+        }
+        setError(userFriendlyMsg);
+        return { success: false, error: userFriendlyMsg };
+      }
+
+      return { success: true };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      const msg = 'Password recovery is unavailable. Please configure NEXT_PUBLIC_SUPABASE_URL.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    // Development demo fallback
+    return { success: true };
+  };
+
+  const updatePassword = async (newPassword: string): Promise<{ success: boolean; error?: string }> => {
+    setError(null);
+    const supabase = getSupabaseBrowserClient();
+
+    if (supabase) {
+      const { error: updateError } = await supabase.auth.updateUser({
+        password: newPassword,
+      });
+
+      if (updateError) {
+        setError(updateError.message);
+        return { success: false, error: updateError.message };
+      }
+
+      return { success: true };
+    }
+
+    if (process.env.NODE_ENV === 'production') {
+      const msg = 'Password update is unavailable. Please configure NEXT_PUBLIC_SUPABASE_URL.';
+      setError(msg);
+      return { success: false, error: msg };
+    }
+
+    // Development demo fallback
+    return { success: true };
+  };
+
   const clearError = () => setError(null);
 
   return (
@@ -396,6 +459,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         signIn,
         signUp,
         signOut,
+        resetPasswordForEmail,
+        updatePassword,
         clearError,
       }}
     >

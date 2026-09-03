@@ -6,6 +6,7 @@ import { sampleTransactions, sampleInvestments, sampleBusinessInvoices, sampleUp
 import { computeRunway, calculateTaxProjection, detectAnomalies, runReconciliationAudit } from '../src/lib/finance-tools.ts';
 import { DigitalTwinEngine } from '../src/lib/digital-twin-engine.ts';
 import { FinanceControllerOrchestrator } from '../src/lib/finance-controller-orchestrator.ts';
+import { formatINR, formatDeterministicNumber } from '../src/components/AnimatedNumber.tsx';
 
 test('Store Data Mode: Fresh initialization starts in EMPTY mode with zero mock data', () => {
   // Reset store to initial state
@@ -846,7 +847,16 @@ test('Buildathon Polish: Investment costBasisAvailable is false when unrecorded 
   assert.equal(noBasis.returnPct, 0);
 });
 
+test('Hydration Guard: formatINR produces deterministic Indian numbering notation without space variations', () => {
+  assert.equal(formatINR(0), '₹0');
+  assert.equal(formatINR(1234), '₹1,234');
+  assert.equal(formatINR(123456), '₹1,23,456');
+  assert.equal(formatINR(1234567), '₹12,34,567');
+  assert.equal(formatINR(-50000), '-₹50,000');
 
-
-
-
+  assert.equal(formatDeterministicNumber(0), '0');
+  assert.equal(formatDeterministicNumber(1234), '1,234');
+  assert.equal(formatDeterministicNumber(123456), '1,23,456');
+  assert.equal(formatDeterministicNumber(1234567), '12,34,567');
+  assert.equal(formatDeterministicNumber(-50000), '-50,000');
+});

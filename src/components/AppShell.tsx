@@ -12,11 +12,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useAuth();
-  const isLoginPage = pathname === '/login';
+  const isAuthPage =
+    pathname === '/login' ||
+    pathname === '/forgot-password' ||
+    pathname === '/reset-password' ||
+    pathname.startsWith('/auth/');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
-  // If on login page, render full screen without dashboard shell
-  if (isLoginPage) {
+  // If on authentication pages, render full screen without dashboard shell
+  if (isAuthPage) {
     return <main style={{ minHeight: '100vh', width: '100vw', overflowX: 'hidden' }}>{children}</main>;
   }
 

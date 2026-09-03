@@ -22,6 +22,8 @@ const ROUTES = [
   '/agents',
   '/privacy',
   '/login',
+  '/forgot-password',
+  '/reset-password',
 ];
 
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
