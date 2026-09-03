@@ -1,4 +1,4 @@
-# FINFLY Architecture Decision Records (ADRs)
+# FINEXFLY Architecture Decision Records (ADRs)
 
 ## ADR 001: Decoupling AI Reasoning from Deterministic Financial Computation
 
@@ -30,7 +30,7 @@
 ## ADR 004: Scoped CSS & Custom Design Tokens over Tailwind Utility Clutter
 
 - **Status**: Accepted
-- **Context**: FINFLY requires bespoke glassmorphic depth, atmospheric light layers, and high-frequency animations (3D Nexus, animated counters). Heavy utility frameworks introduce bloat and rigid styling constraints.
+- **Context**: FINEXFLY requires bespoke glassmorphic depth, atmospheric light layers, and high-frequency animations (3D Nexus, animated counters). Heavy utility frameworks introduce bloat and rigid styling constraints.
 - **Decision**: Use scoped CSS and centralized design tokens in `globals.css` (`--bg-surface-glass`, `--accent-primary`, `--border-strong`, etc.).
 - **Consequences**: Instant theme switching, lightweight bundle size, and tailored fintech visual aesthetics.
 

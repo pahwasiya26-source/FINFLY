@@ -1,12 +1,12 @@
-# FINFLY Testing & Verification Guide
+# FINEXFLY Testing & Verification Guide
 
 ## 1. Overview of Test Architecture
 
-FINFLY employs a multi-tiered verification pipeline designed to ensure that no financial engine miscalculates, no route breaks, and no unauthorized data access occurs.
+FINEXFLY employs a multi-tiered verification pipeline designed to ensure that no financial engine miscalculates, no route breaks, and no unauthorized data access occurs.
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│                   FINFLY Test Suite                    │
+│                  FINEXFLY Test Suite                   │
 ├────────────────────────────────────────────────────────┤
 │ 1. Deterministic Math & Simulation Unit Tests          │
 │ 2. AI Controller Grounding & Decision Trace Tests      │

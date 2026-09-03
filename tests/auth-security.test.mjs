@@ -22,7 +22,7 @@ test('Supabase Server Enclave: Prevents client-side access to Admin/Service-Role
     },
     {
       name: 'Error',
-      message: /FINFLY Security Violation/,
+      message: /FINEXFLY Security Violation/,
     }
   );
 

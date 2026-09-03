@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from 'next/server';
+import { createServerClient } from '@supabase/ssr';
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // 1. Allow public static assets and auth endpoints
@@ -8,6 +9,7 @@ export function middleware(request: NextRequest) {
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
     pathname === '/login' ||
+    pathname.startsWith('/auth/callback') ||
     pathname.startsWith('/privacy') ||
     pathname.startsWith('/api/public');
 
@@ -17,55 +19,69 @@ export function middleware(request: NextRequest) {
 
   const isProduction = process.env.NODE_ENV === 'production';
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   const isConfigured =
     supabaseUrl &&
+    supabaseAnonKey &&
     supabaseUrl !== 'https://your-project-id.supabase.co' &&
     supabaseUrl.startsWith('https://');
 
-  // In strict production, only legitimate Supabase auth session tokens are accepted
+  // In strict production, verify real Supabase authentication session
   if (isProduction) {
     if (!isConfigured) {
-      // In unconfigured production, block access to protected financial data safely
+      // In unconfigured production, block access safely
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('error', 'unconfigured_production');
       return NextResponse.redirect(loginUrl);
     }
 
-    // Check for standard Supabase session cookies (sb-<project-ref>-auth-token)
-    // Note: synthetic/demo cookies like 'sb-finfly-auth-token' or 'finfly_session' are strictly rejected in production
-    const hasProductionAuthCookie = request.cookies
-      .getAll()
-      .some(
-        (c) =>
-          c.name.startsWith('sb-') &&
-          c.name.endsWith('-auth-token') &&
-          c.name !== 'sb-finfly-auth-token'
-      );
+    let response = NextResponse.next({
+      request: {
+        headers: request.headers,
+      },
+    });
 
-    if (!hasProductionAuthCookie) {
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return request.cookies.getAll();
+        },
+        setAll(cookiesToSet) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            request.cookies.set(name, value);
+            response.cookies.set(name, value, options);
+          });
+        },
+      },
+    });
+
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (error || !user) {
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
     }
 
-    return NextResponse.next();
+    return response;
   }
 
   // -------------------------------------------------------------
   // Development / Local Demo Mode
   // -------------------------------------------------------------
-  // In development, allow demo session cookies or pass-through
   const hasDevSession = request.cookies
     .getAll()
     .some(
       (c) =>
-        (c.name.startsWith('sb-') && c.name.endsWith('-auth-token')) ||
+        (c.name.startsWith('sb-') && c.name.includes('-auth-token')) ||
         c.name === 'finfly_session' ||
         c.name === 'sb-finfly-auth-token'
     );
 
   if (isConfigured && !hasDevSession) {
-    // If Supabase is configured locally and user has no session, redirect to login
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);

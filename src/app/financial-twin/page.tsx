@@ -173,6 +173,35 @@ export default function FinancialTwinPage() {
         </div>
       </div>
 
+      {/* ── PROJECTION / WHAT-IF DISCLAIMER BANNER ── */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '12px 18px',
+          background: 'var(--bg-surface-elevated)',
+          border: '1px solid var(--border-color)',
+          borderLeft: '4px solid var(--accent-primary)',
+          borderRadius: '12px',
+          fontSize: '0.84rem',
+          color: 'var(--text-secondary)',
+          flexWrap: 'wrap',
+          gap: '10px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+          <span className="pill-badge pill-neutral" style={{ fontSize: '0.65rem' }}>FORWARD PROJECTION MODEL</span>
+          <span>
+            Scenarios evaluate deterministic cash compounding formulas. These outputs are forward simulations and do not alter actual accounting records.
+          </span>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+          <span className="pill-badge pill-emerald" style={{ fontSize: '0.65rem' }}>BASELINE: VERIFIED LEDGER</span>
+          <span className="pill-badge pill-indigo" style={{ fontSize: '0.65rem' }}>SIMULATION: WHAT-IF</span>
+        </div>
+      </div>
+
       {/* ── 3-COLUMN HERO WORKSPACE (LEVERS | 3D REACTIVE CORE | SCENARIO COMPARISON) ── */}
       <div style={{ display: 'grid', gridTemplateColumns: '340px 1fr 360px', gap: '20px', alignItems: 'stretch' }} className="twin-3col-grid">
         {/* ── LEFT COLUMN: SCENARIO LEVERS ── */}

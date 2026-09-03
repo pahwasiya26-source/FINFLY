@@ -8,6 +8,7 @@ import {
   ToolExecutionResult,
 } from './finance-tools';
 import { ScenarioVariable } from './digital-twin-engine';
+import { FinancialOverview } from './mock-data';
 
 export interface DecisionTraceEntry {
   traceId: string;
@@ -58,7 +59,8 @@ export class FinanceControllerOrchestrator {
    */
   public static async processQuery(
     query: string,
-    currentMode: 'PERSONAL' | 'BUSINESS' = 'PERSONAL'
+    currentMode: 'PERSONAL' | 'BUSINESS' = 'PERSONAL',
+    customOverview?: FinancialOverview
   ): Promise<ControllerResponse> {
     const lowerQuery = query.toLowerCase();
     const traceId = `trace_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
@@ -66,7 +68,7 @@ export class FinanceControllerOrchestrator {
 
     // 1. Intent Detection
     if (lowerQuery.includes('runway') || lowerQuery.includes('burn') || lowerQuery.includes('cash buffer')) {
-      return this.handleRunwayQuery(query, currentMode, traceId, timestamp);
+      return this.handleRunwayQuery(query, currentMode, traceId, timestamp, customOverview);
     } else if (
       lowerQuery.includes('reconcil') ||
       lowerQuery.includes('gateway') ||
@@ -83,14 +85,14 @@ export class FinanceControllerOrchestrator {
       lowerQuery.includes('spend') ||
       lowerQuery.includes('additional')
     ) {
-      return this.handleScenarioQuery(query, currentMode, traceId, timestamp);
+      return this.handleScenarioQuery(query, currentMode, traceId, timestamp, customOverview);
     } else if (
       lowerQuery.includes('tax') ||
       lowerQuery.includes('deduction') ||
       lowerQuery.includes('regime') ||
       lowerQuery.includes('87a')
     ) {
-      return this.handleTaxQuery(query, currentMode, traceId, timestamp);
+      return this.handleTaxQuery(query, currentMode, traceId, timestamp, customOverview);
     } else if (
       lowerQuery.includes('anomal') ||
       lowerQuery.includes('variance') ||
@@ -100,7 +102,7 @@ export class FinanceControllerOrchestrator {
     ) {
       return this.handleAnomalyQuery(query, currentMode, traceId, timestamp);
     } else {
-      return this.handleGeneralOverviewQuery(query, currentMode, traceId, timestamp);
+      return this.handleGeneralOverviewQuery(query, currentMode, traceId, timestamp, customOverview);
     }
   }
 
@@ -112,9 +114,10 @@ export class FinanceControllerOrchestrator {
     query: string,
     mode: 'PERSONAL' | 'BUSINESS',
     traceId: string,
-    timestamp: string
+    timestamp: string,
+    customOverview?: FinancialOverview
   ): ControllerResponse {
-    const overviewTool = getFinancialOverview(mode);
+    const overviewTool = getFinancialOverview(mode, customOverview);
     const runwayTool = computeRunway(
       overviewTool.data.cash,
       overviewTool.data.monthlyExpenses,
@@ -249,9 +252,10 @@ export class FinanceControllerOrchestrator {
     query: string,
     mode: 'PERSONAL' | 'BUSINESS',
     traceId: string,
-    timestamp: string
+    timestamp: string,
+    customOverview?: FinancialOverview
   ): ControllerResponse {
-    const overviewTool = getFinancialOverview(mode);
+    const overviewTool = getFinancialOverview(mode, customOverview);
     
     // Parse numeric intent or apply sensible default simulation
     let expenseAddition = 50000;
@@ -349,9 +353,10 @@ export class FinanceControllerOrchestrator {
     query: string,
     mode: 'PERSONAL' | 'BUSINESS',
     traceId: string,
-    timestamp: string
+    timestamp: string,
+    customOverview?: FinancialOverview
   ): ControllerResponse {
-    const overviewTool = getFinancialOverview(mode);
+    const overviewTool = getFinancialOverview(mode, customOverview);
     const grossAnnual = overviewTool.data.monthlyIncome * 12;
     const taxTool = calculateTaxProjection(grossAnnual, 150000, 'new');
     const data = taxTool.data;
@@ -472,9 +477,10 @@ export class FinanceControllerOrchestrator {
     query: string,
     mode: 'PERSONAL' | 'BUSINESS',
     traceId: string,
-    timestamp: string
+    timestamp: string,
+    customOverview?: FinancialOverview
   ): ControllerResponse {
-    const overviewTool = getFinancialOverview(mode);
+    const overviewTool = getFinancialOverview(mode, customOverview);
     const data = overviewTool.data;
 
     const explanation = `General Financial Overview (${mode} Mode): Net financial position stands at ₹${data.netPosition.toLocaleString('en-IN')} with ₹${data.cash.toLocaleString('en-IN')} in liquid cash reserves, total liabilities of ₹${data.liabilities.toLocaleString('en-IN')}, and a monthly surplus of ₹${data.monthlySurplus.toLocaleString('en-IN')} (savings/retention rate: ${data.savingsRate}%). Overall Financial Health Index is calibrated at ${data.healthScore}/100.`;

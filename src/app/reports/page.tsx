@@ -42,11 +42,11 @@ export default function ReportsPage() {
 
   const handleDownloadCSV = () => {
     let csvRows: string[][] = [];
-    let filename = `finfly_report_${activeReport.toLowerCase()}_${Date.now()}.csv`;
+    let filename = `finexfly_report_${activeReport.toLowerCase()}_${Date.now()}.csv`;
 
     if (activeReport === 'CASH_FLOW') {
       csvRows = [
-        ['FINFLY FINANCIAL OS - CASH FLOW STATEMENT', reportPeriod, mode],
+        ['FINEXFLY - CASH FLOW STATEMENT', reportPeriod, mode],
         ['Metric', 'Amount (INR)'],
         ['Operating Cash Inflow (Annualized)', (data.monthlyIncome * 12).toString()],
         ['Operating Cash Outflow (Annualized)', (data.monthlyExpenses * 12).toString()],
@@ -56,7 +56,7 @@ export default function ReportsPage() {
       ];
     } else if (activeReport === 'BALANCE_SHEET') {
       csvRows = [
-        ['FINFLY FINANCIAL OS - BALANCE SHEET', reportPeriod, mode],
+        ['FINEXFLY - BALANCE SHEET', reportPeriod, mode],
         ['Account Class', 'Amount (INR)'],
         ['Liquid Cash & Equivalents', data.cash.toString()],
         ['Investments & Securities', data.investments.toString()],
@@ -67,7 +67,7 @@ export default function ReportsPage() {
       ];
     } else {
       csvRows = [
-        ['FINFLY STATEMENT EXPORT', activeReport, reportPeriod, mode],
+        ['FINEXFLY STATEMENT EXPORT', activeReport, reportPeriod, mode],
         ['Generated At', new Date().toISOString()],
         ['Net Position', data.netPosition.toString()],
         ['Cash Reserves', data.cash.toString()],
@@ -157,7 +157,7 @@ export default function ReportsPage() {
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--border-color)', paddingBottom: '18px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
             <span className="pill-badge pill-neutral" style={{ marginBottom: '4px' }}>
-              FINFLY General Ledger Snapshot • {mode} Context
+              FINEXFLY General Ledger Snapshot • {mode} Context
             </span>
             <h2 style={{ fontSize: '1.6rem', fontWeight: 800 }}>
               {activeReport === 'CASH_FLOW' && 'Statement of Cash Flows'}
@@ -168,7 +168,7 @@ export default function ReportsPage() {
               {activeReport === 'HEALTH_BRIEFING' && 'Executive Financial Health & Risk Briefing'}
             </h2>
             <div style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', marginTop: '2px' }}>
-              Period: {reportPeriod} • Entity: {mode === 'PERSONAL' ? 'Siya Pahwa (Family Office)' : 'FINFLY Enterprise Ltd'}
+              Period: {reportPeriod} • Entity: {mode === 'PERSONAL' ? 'Siya Pahwa (Family Office)' : 'FINEXFLY Enterprise Ltd'}
             </div>
           </div>
 

@@ -47,6 +47,7 @@ export interface InvestmentAsset {
   riskRating: 'Low' | 'Moderate' | 'High';
   targetAllocationPct: number;
   entity: 'PERSONAL' | 'BUSINESS';
+  costBasisAvailable?: boolean;
 }
 
 export interface BusinessInvoice {

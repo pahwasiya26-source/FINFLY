@@ -132,7 +132,7 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
                   color: 'var(--text-primary)',
                 }}
               >
-                FINFLY
+                FINEXFLY
               </span>
               <span
                 style={{

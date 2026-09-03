@@ -371,84 +371,106 @@ export default function ReconciliationPage() {
           <span className="pill-badge pill-neutral">Showing {filteredData.length} records</span>
         </div>
 
-        <div className="fin-table-container">
-          <table className="fin-table">
-            <thead>
-              <tr>
-                <th>Entity ID</th>
-                <th>Gateway Record</th>
-                <th>Bank Settlement</th>
-                <th>Expected vs Actual</th>
-                <th>Status</th>
-                <th>Confidence</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredData.map((item) => (
-                <tr
-                  key={item.id}
-                  onClick={() => setSelectedRecord(item)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                    {item.id}
-                  </td>
-                  <td>
-                    {item.gatewayRecord ? (
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{item.gatewayRecord.type.toUpperCase()}</div>
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>₹{item.gatewayRecord.amount} ({item.gatewayRecord.status})</div>
-                      </div>
-                    ) : (
-                      <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>None (Direct Bank Txn)</span>
-                    )}
-                  </td>
-                  <td>
-                    {item.bankTransaction ? (
-                      <div>
-                        <div style={{ fontWeight: 600 }}>{item.bankTransaction.id}</div>
-                        <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>₹{item.bankTransaction.amount}</div>
-                      </div>
-                    ) : (
-                      <span style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 600 }}>Unsettled in Bank</span>
-                    )}
-                  </td>
-                  <td>
-                    <div style={{ fontFamily: 'Outfit', fontWeight: 700 }}>
-                      {item.difference && item.difference > 0 ? (
-                        <span style={{ color: 'var(--gold-accent)' }}>Δ ₹{item.difference}</span>
-                      ) : (
-                        <span style={{ color: 'var(--accent-primary)' }}>Exact Match (₹0)</span>
-                      )}
-                    </div>
-                  </td>
-                  <td>{getStatusBadge(item.status, item.id)}</td>
-                  <td>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                      <span style={{ fontFamily: 'Outfit', fontWeight: 700 }}>{approvedReconciliations.has(item.id) ? 100 : item.confidence}%</span>
-                      <ChevronRight size={14} color="var(--text-tertiary)" />
-                    </div>
-                  </td>
-                  <td onClick={(e) => e.stopPropagation()}>
-                    <div style={{ display: 'flex', gap: '6px' }}>
-                      <button
-                        type="button"
-                        className="btn-secondary"
-                        style={{ padding: '4px 10px', fontSize: '0.74rem' }}
-                        onClick={() => handleApproveMatch(item.id)}
-                        title="Approve match into verified general ledger"
-                      >
-                        <Check size={12} />
-                        <span>Approve</span>
-                      </button>
-                    </div>
-                  </td>
+        {filteredData.length === 0 ? (
+          filter === 'EXCEPTIONS' && exceptionRecords === 0 ? (
+            <div style={{ padding: '48px 24px', textAlign: 'center', background: 'var(--success-bg)', border: '1px solid var(--success-border)', borderRadius: '14px', margin: '12px 0' }}>
+              <CheckCircle2 size={38} color="var(--accent-primary)" style={{ margin: '0 auto 12px auto' }} />
+              <h4 style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginBottom: '6px' }}>
+                100% Reconciled — Zero Exceptions Detected
+              </h4>
+              <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', maxWidth: '440px', margin: '0 auto' }}>
+                All scanned gateway settlements match 1-to-1 with bank credits. Zero MDR fee variances, duplicate webhooks, or missing transactions remain unresolved in the general ledger.
+              </p>
+            </div>
+          ) : filter === 'EXCEPTIONS' && exceptionRecords > 0 ? (
+            <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-secondary)', fontSize: '0.88rem' }}>
+              No exceptions match the current filters ({exceptionRecords} unresolved {exceptionRecords === 1 ? 'exception exists' : 'exceptions exist'} in general ledger).
+            </div>
+          ) : (
+            <div style={{ padding: '40px 24px', textAlign: 'center', color: 'var(--text-tertiary)', fontSize: '0.88rem' }}>
+              No reconciliation records found{searchQuery ? ` matching "${searchQuery}"` : ''}.
+            </div>
+          )
+        ) : (
+          <div className="fin-table-container">
+            <table className="fin-table">
+              <thead>
+                <tr>
+                  <th>Entity ID</th>
+                  <th>Gateway Record</th>
+                  <th>Bank Settlement</th>
+                  <th>Expected vs Actual</th>
+                  <th>Status</th>
+                  <th>Confidence</th>
+                  <th>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+              </thead>
+              <tbody>
+                {filteredData.map((item) => (
+                  <tr
+                    key={item.id}
+                    onClick={() => setSelectedRecord(item)}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    <td style={{ fontFamily: 'var(--font-mono)', fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                      {item.id}
+                    </td>
+                    <td>
+                      {item.gatewayRecord ? (
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{item.gatewayRecord.type.toUpperCase()}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>₹{item.gatewayRecord.amount} ({item.gatewayRecord.status})</div>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--text-muted)', fontSize: '0.8rem' }}>None (Direct Bank Txn)</span>
+                      )}
+                    </td>
+                    <td>
+                      {item.bankTransaction ? (
+                        <div>
+                          <div style={{ fontWeight: 600 }}>{item.bankTransaction.id}</div>
+                          <div style={{ fontSize: '0.74rem', color: 'var(--text-secondary)' }}>₹{item.bankTransaction.amount}</div>
+                        </div>
+                      ) : (
+                        <span style={{ color: 'var(--danger)', fontSize: '0.8rem', fontWeight: 600 }}>Unsettled in Bank</span>
+                      )}
+                    </td>
+                    <td>
+                      <div style={{ fontFamily: 'Outfit', fontWeight: 700 }}>
+                        {item.difference && item.difference > 0 ? (
+                          <span style={{ color: 'var(--gold-accent)' }}>Δ ₹{item.difference}</span>
+                        ) : (
+                          <span style={{ color: 'var(--accent-primary)' }}>Exact Match (₹0)</span>
+                        )}
+                      </div>
+                    </td>
+                    <td>{getStatusBadge(item.status, item.id)}</td>
+                    <td>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                        <span style={{ fontFamily: 'Outfit', fontWeight: 700 }}>{approvedReconciliations.has(item.id) ? 100 : item.confidence}%</span>
+                        <ChevronRight size={14} color="var(--text-tertiary)" />
+                      </div>
+                    </td>
+                    <td onClick={(e) => e.stopPropagation()}>
+                      <div style={{ display: 'flex', gap: '6px' }}>
+                        <button
+                          type="button"
+                          className="btn-secondary"
+                          style={{ padding: '4px 10px', fontSize: '0.74rem' }}
+                          onClick={() => handleApproveMatch(item.id)}
+                          title="Approve match into verified general ledger"
+                        >
+                          <Check size={12} />
+                          <span>Approve</span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
 
       {/* ── DEEP TECHNICAL EXCEPTION INSPECTION SLIDE-OVER DRAWER ── */}

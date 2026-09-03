@@ -47,7 +47,7 @@ export default function SettingsPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <span className="pill-badge pill-neutral">System Configuration</span>
             <span style={{ color: 'var(--text-muted)' }}>•</span>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>FINFLY OS Preferences</span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>FINEXFLY Preferences</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--accent-primary-subtle)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

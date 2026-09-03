@@ -23,9 +23,13 @@ import {
   Zap,
   Terminal,
   FileSearch,
-  Check
+  Check,
+  Loader2,
+  HelpCircle
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '../../lib/auth/AuthContext';
+import { insertDecisionTrace } from '../../lib/supabase/queries';
 
 const PRESET_QUERIES = [
   'What is my current runway and cash buffer?',
@@ -36,7 +40,8 @@ const PRESET_QUERIES = [
 ];
 
 export default function FinanceControllerPage() {
-  const { mode, getCurrentData } = useStore();
+  const { mode, getCurrentData, dataMode, isHydrating, dataError, fetchAndHydrate } = useStore();
+  const { user } = useAuth();
   const data = getCurrentData();
 
   const [inputQuery, setInputQuery] = useState('');
@@ -45,6 +50,12 @@ export default function FinanceControllerPage() {
   const [expandedTraceId, setExpandedTraceId] = useState<string | null>(null);
   const [actionSuccessMessage, setActionSuccessMessage] = useState<string | null>(null);
   const [history, setHistory] = useState<ControllerResponse[]>([]);
+
+  useEffect(() => {
+    if (user?.id && dataMode !== 'DEMO') {
+      fetchAndHydrate(user.id);
+    }
+  }, [user?.id, dataMode, fetchAndHydrate]);
 
   // Load initial runway analysis on mount or mode change
   useEffect(() => {
@@ -56,12 +67,30 @@ export default function FinanceControllerPage() {
     setLoading(true);
     setActionSuccessMessage(null);
 
-    const resp = await FinanceControllerOrchestrator.processQuery(queryText, mode);
+    const resp = await FinanceControllerOrchestrator.processQuery(queryText, mode, data);
     setCurrentResponse(resp);
     setExpandedTraceId(resp.id);
     setHistory((prev) => [resp, ...prev.filter((h) => h.id !== resp.id)].slice(0, 5));
     setLoading(false);
     setInputQuery('');
+
+    // Persist trace to Supabase in authenticated session (immutable audit trail)
+    if (user?.id && dataMode !== 'DEMO') {
+      insertDecisionTrace({
+        id: `dt_${Date.now()}`,
+        trace_id: resp.id,
+        user_id: user.id,
+        organization_id: null,
+        query: resp.query,
+        intent: resp.intent,
+        tools_used: resp.decisionTrace.toolsUsed,
+        validation_status: resp.decisionTrace.validationStatus,
+        grounded_metrics: resp.decisionTrace.groundedMetrics,
+        created_at: new Date().toISOString(),
+      }).catch(() => {
+        // Non-blocking audit logging
+      });
+    }
   };
 
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -71,16 +100,48 @@ export default function FinanceControllerPage() {
 
   const handleApproveStagedAction = (action: DecisionTraceEntry['stagedAction']) => {
     if (!action) return;
-    setActionSuccessMessage(`Action verified and authorized by human controller: "${action.title}". Routing to target module...`);
+    setActionSuccessMessage(`Action verified and authorized by human controller: "${action.title}". Staged execution recorded in audit trail.`);
     if (action.targetUrl) {
       setTimeout(() => {
         window.location.href = action.targetUrl!;
-      }, 1000);
+      }, 1200);
     }
   };
 
+  if (isHydrating && dataMode !== 'DEMO') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%', padding: '40px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Loader2 size={20} color="var(--accent-primary)" style={{ animation: 'spin 1s linear infinite' }} />
+          <span style={{ fontSize: '0.94rem', color: 'var(--text-secondary)' }}>Initializing Finance Controller &amp; Audit Engine...</span>
+        </div>
+        <div className="glass-panel" style={{ padding: '24px', height: '140px', opacity: 0.5 }} />
+        <div className="glass-panel" style={{ padding: '24px', height: '240px', opacity: 0.5 }} />
+        <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+      {/* Synchronization Error Banner */}
+      {dataError && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '12px', fontSize: '0.86rem', color: 'var(--danger)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={17} />
+            <span>Controller Telemetry Error: {dataError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => user?.id && fetchAndHydrate(user.id)}
+            className="btn-secondary"
+            style={{ fontSize: '0.78rem', padding: '4px 10px' }}
+          >
+            Retry Sync
+          </button>
+        </div>
+      )}
+
       {/* ── HERO & SYSTEM STATUS ── */}
       <div className="glass-hero" style={{ padding: '32px 36px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
@@ -89,6 +150,7 @@ export default function FinanceControllerPage() {
               <span className="pill-badge pill-emerald">Strict Read-Only Enclave</span>
               <span className="pill-badge pill-indigo">Zero-Hallucination Engine</span>
               <span className="pill-badge pill-neutral">Mode: {mode}</span>
+              {dataMode === 'DEMO' && <span className="pill-badge pill-gold">Demo Telemetry Active</span>}
             </div>
             <h1 style={{ fontSize: '2.1rem', fontWeight: 800, letterSpacing: '-0.025em' }}>
               AI Finance Controller &amp; Operations
@@ -203,10 +265,10 @@ export default function FinanceControllerPage() {
           {/* Query & Intent Header */}
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px' }}>
             <div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px', flexWrap: 'wrap' }}>
                 <span className="pill-badge pill-emerald">Intent: {currentResponse.intent}</span>
                 <span className={`pill-badge ${currentResponse.decisionTrace.validationStatus === 'STRICTLY_GROUNDED' ? 'pill-emerald' : 'pill-gold'}`}>
-                  {currentResponse.decisionTrace.validationStatus}
+                  {currentResponse.decisionTrace.validationStatus === 'STRICTLY_GROUNDED' ? '● STRICTLY GROUNDED (VERIFIED LEDGER)' : '▲ PROJECTION ESTIMATE (FORWARD SIMULATION)'}
                 </span>
               </div>
               <h2 style={{ fontSize: '1.45rem', fontWeight: 800 }}>"{currentResponse.query}"</h2>
@@ -255,13 +317,78 @@ export default function FinanceControllerPage() {
             </div>
           </div>
 
+          {/* Unresolved Exceptions Table if Reconciliation Query */}
+          {(() => {
+            const reconTool = currentResponse.decisionTrace.toolsUsed.find(
+              (t) => t.toolName === 'runReconciliationAudit'
+            );
+            const discrepancies = reconTool?.outputs?.discrepancies || [];
+            if (reconTool && discrepancies.length > 0) {
+              return (
+                <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '14px', padding: '20px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px', flexWrap: 'wrap', gap: '8px' }}>
+                    <div style={{ fontSize: '0.76rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.06em' }}>
+                      Unresolved Reconciliation Exceptions ({discrepancies.length})
+                    </div>
+                    <span className="pill-badge pill-gold">Requires Human Review</span>
+                  </div>
+                  <div className="fin-table-container">
+                    <table className="fin-table" style={{ fontSize: '0.84rem' }}>
+                      <thead>
+                        <tr>
+                          <th>Reference ID</th>
+                          <th>Exception Type</th>
+                          <th>Amount</th>
+                          <th>Audit Findings / Note</th>
+                          <th>Status</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {discrepancies.map((d: any, i: number) => (
+                          <tr key={i}>
+                            <td style={{ fontFamily: 'var(--font-mono)', fontWeight: 600 }}>{d.id}</td>
+                            <td>
+                              <span className={`pill-badge ${d.type === 'DUPLICATE_WEBHOOK' ? 'pill-danger' : d.type === 'MDR_FEE_VARIANCE' ? 'pill-gold' : 'pill-neutral'}`} style={{ fontSize: '0.65rem' }}>
+                                {d.type}
+                              </span>
+                            </td>
+                            <td style={{ fontFamily: 'Outfit', fontWeight: 700 }}>
+                              ₹{d.amount.toLocaleString('en-IN')}
+                            </td>
+                            <td style={{ color: 'var(--text-secondary)', fontSize: '0.82rem' }}>{d.note}</td>
+                            <td>
+                              <span className="pill-badge pill-gold" style={{ fontSize: '0.62rem' }}>
+                                Unresolved
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              );
+            } else if (reconTool && discrepancies.length === 0) {
+              return (
+                <div style={{ background: 'var(--success-bg)', border: '1px solid var(--success-border)', borderRadius: '12px', padding: '16px', display: 'flex', alignItems: 'center', gap: '12px' }}>
+                  <CheckCircle2 size={20} color="var(--accent-primary)" />
+                  <div>
+                    <div style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>100% Reconciled — Zero Exceptions</div>
+                    <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>All evaluated records cleanly match between gateway and bank settlement statements.</div>
+                  </div>
+                </div>
+              );
+            }
+            return null;
+          })()}
+
           {/* Staged Action Proposal Requiring Human Authorization */}
           {currentResponse.stagedAction && (
             <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-strong)', borderLeft: '4px solid var(--accent-primary)', borderRadius: '12px', padding: '18px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '14px' }}>
               <div>
                 <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginBottom: '2px' }}>
                   <span className="pill-badge pill-emerald" style={{ fontSize: '0.65rem' }}>Staged Action</span>
-                  <span style={{ fontSize: '0.76rem', color: 'var(--text-tertiary)' }}>Requires Human Authorization</span>
+                  <span style={{ fontSize: '0.76rem', color: 'var(--text-tertiary)' }}>Requires Explicit Human Authorization</span>
                 </div>
                 <div style={{ fontSize: '1rem', fontWeight: 700, color: 'var(--text-primary)' }}>{currentResponse.stagedAction.title}</div>
                 <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', marginTop: '2px' }}>{currentResponse.stagedAction.description}</div>

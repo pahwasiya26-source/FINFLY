@@ -146,7 +146,7 @@ export function ThreeFinancialCore({
         ctx.fillRect(110, 0, 36, 128);
         ctx.fillStyle = '#0f172a';
         ctx.font = 'bold 14px Outfit, sans-serif';
-        ctx.fillText('FINFLY', 128, 64);
+        ctx.fillText('FINEXFLY', 128, 64);
 
         return new THREE.CanvasTexture(c);
       };
@@ -319,17 +319,17 @@ export function ThreeFinancialCore({
         return group;
       };
 
-      const createBarChart = (x: number, y: number, z: number) => {
+      const createBarChart = (x: number, y: number, z: number, scale = 1) => {
         const group = new THREE.Group();
         [0.16, 0.28, 0.38, 0.5].forEach((h, idx) => {
-          const bGeo = new THREE.BoxGeometry(0.07, h, 0.07);
+          const bGeo = new THREE.BoxGeometry(0.07 * scale, h * scale, 0.07 * scale);
           const bMat = new THREE.MeshStandardMaterial({
             color: idx === 3 ? 0x34d399 : 0x059669,
             metalness: 0.3,
             roughness: 0.2,
           });
           const bar = new THREE.Mesh(bGeo, bMat);
-          bar.position.set((idx - 1.5) * 0.09, h / 2, 0);
+          bar.position.set((idx - 1.5) * 0.09 * scale, (h * scale) / 2, 0);
           group.add(bar);
         });
         group.rotation.y = -Math.PI / 6;
@@ -340,9 +340,9 @@ export function ThreeFinancialCore({
         return group;
       };
 
-      const createCreditCard = (x: number, y: number, z: number) => {
+      const createCreditCard = (x: number, y: number, z: number, scale = 1) => {
         const group = new THREE.Group();
-        const cardGeo = new THREE.BoxGeometry(0.48, 0.28, 0.012);
+        const cardGeo = new THREE.BoxGeometry(0.48 * scale, 0.28 * scale, 0.012 * scale);
         const topMat = new THREE.MeshStandardMaterial({ map: cardTexture, metalness: 0.4, roughness: 0.3 });
         const edgeMat = new THREE.MeshStandardMaterial({ color: 0x022c22, roughness: 0.4 });
         const card = new THREE.Mesh(cardGeo, [edgeMat, edgeMat, edgeMat, edgeMat, topMat, edgeMat]);
@@ -356,9 +356,9 @@ export function ThreeFinancialCore({
         return group;
       };
 
-      const createCalculator = (x: number, y: number, z: number) => {
+      const createCalculator = (x: number, y: number, z: number, scale = 1) => {
         const group = new THREE.Group();
-        const calcGeo = new THREE.BoxGeometry(0.28, 0.38, 0.035);
+        const calcGeo = new THREE.BoxGeometry(0.28 * scale, 0.38 * scale, 0.035 * scale);
         const topMat = new THREE.MeshStandardMaterial({ map: calcTexture, roughness: 0.4 });
         const sideMat = new THREE.MeshStandardMaterial({ color: 0x0f172a, roughness: 0.5 });
         const calc = new THREE.Mesh(calcGeo, [sideMat, sideMat, sideMat, sideMat, topMat, sideMat]);
@@ -372,14 +372,14 @@ export function ThreeFinancialCore({
         return group;
       };
 
-      // Exact Placements
-      createBanknoteStack(-1.5, 1.25, 0.3, 0.9);
-      createCoinMesh(-0.5, 1.45, 0.2, 1.0, 0.2);
-      createBarChart(1.2, 1.2, 0.3);
-      createCreditCard(1.4, 0.1, 0.5);
-      createCalculator(0.95, -0.85, 0.4);
-      createCoinMesh(-1.4, -0.7, 0.3, 0.85, 0.4);
-      createBanknoteStack(-1.3, 0.4, 0.4, 0.85);
+      // Exact Placements - Scaled up and spread out
+      createBanknoteStack(-2.2, 1.5, 0.3, 1.45);
+      createCoinMesh(-0.8, 2.0, 0.2, 1.6, 0.2);
+      createBarChart(1.8, 1.6, 0.3, 1.5);
+      createCreditCard(2.0, 0.1, 0.5, 1.6);
+      createCalculator(1.5, -1.3, 0.4, 1.5);
+      createCoinMesh(-2.0, -1.1, 0.3, 1.35, 0.4);
+      createBanknoteStack(-2.1, 0.2, 0.4, 1.4);
 
       // Lighting
       const ambLight = new THREE.AmbientLight(0xffffff, 0.9);

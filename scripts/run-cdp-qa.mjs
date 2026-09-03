@@ -99,7 +99,7 @@ class CDPClient {
 }
 
 async function runQASuite() {
-  console.log("🚀 Starting Comprehensive FINFLY QA & Interactive Functional Audit...\n");
+  console.log("🚀 Starting Comprehensive FINEXFLY QA & Interactive Functional Audit...\n");
 
   // Wait for Chrome remote debugging port with retry loop
   let targets = null;

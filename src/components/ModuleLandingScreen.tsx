@@ -50,7 +50,7 @@ export function ModuleLandingScreen({
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <span className="pill-badge pill-emerald">{badge}</span>
             <span style={{ color: 'var(--text-muted)' }}>•</span>
-            <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>FINFLY Operating System</span>
+            <span style={{ fontSize: '0.8rem', color: 'var(--text-tertiary)' }}>FINEXFLY — AI Finance Controller</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div

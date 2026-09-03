@@ -7,7 +7,7 @@ const supabaseServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 function assertServerEnvironment() {
   if (typeof window !== 'undefined') {
     throw new Error(
-      '[FINFLY Security Violation] Server-side Supabase client must never be initialized in the browser.'
+      '[FINEXFLY Security Violation] Server-side Supabase client must never be initialized in the browser.'
     );
   }
 }
@@ -21,7 +21,7 @@ export function getSupabaseServerClient(userAccessToken?: string): SupabaseClien
 
   if (!supabaseUrl || !supabaseAnonKey) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[FINFLY Security] Supabase URL or Anon key missing in production.');
+      console.error('[FINEXFLY Security] Supabase URL or Anon key missing in production.');
     }
     return null;
   }
@@ -48,7 +48,7 @@ export function getSupabaseAdminClient(): SupabaseClient | null {
 
   if (!supabaseUrl || !supabaseServiceRoleKey) {
     if (process.env.NODE_ENV === 'production') {
-      console.error('[FINFLY Security] SUPABASE_SERVICE_ROLE_KEY is not configured on the server.');
+      console.error('[FINEXFLY Security] SUPABASE_SERVICE_ROLE_KEY is not configured on the server.');
     }
     return null;
   }

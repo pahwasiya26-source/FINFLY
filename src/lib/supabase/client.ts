@@ -1,4 +1,5 @@
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createBrowserClient } from '@supabase/ssr';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
@@ -16,14 +17,15 @@ export function isSupabaseConfigured(): boolean {
 let browserClient: SupabaseClient | null = null;
 
 /**
- * Get or initialize the browser-side Supabase client using the anon key.
- * In production, if unconfigured, it safely fails without creating fake access.
+ * Get or initialize the browser-side Supabase client using SSR cookie storage.
+ * In the browser, this client automatically syncs authenticated sessions with document.cookie,
+ * ensuring Server Components, Route Handlers, and Next.js middleware receive valid auth tokens.
  */
 export function getSupabaseBrowserClient(): SupabaseClient | null {
   if (browserClient) return browserClient;
 
   if (isSupabaseConfigured()) {
-    browserClient = createClient(supabaseUrl!, supabaseAnonKey!, {
+    browserClient = createBrowserClient(supabaseUrl!, supabaseAnonKey!, {
       auth: {
         persistSession: true,
         autoRefreshToken: true,
@@ -36,11 +38,10 @@ export function getSupabaseBrowserClient(): SupabaseClient | null {
   const isProduction = process.env.NODE_ENV === 'production';
   if (isProduction) {
     console.error(
-      '[FINFLY Security Guard] Supabase is not configured in production. Failing safely.'
+      '[FINEXFLY Security Guard] Supabase is not configured in production. Failing safely.'
     );
     return null;
   }
 
-  // Development/Demo fallback notice
   return null;
 }

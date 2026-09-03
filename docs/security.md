@@ -1,8 +1,8 @@
-# FINFLY Security & Compliance Architecture
+# FINEXFLY Security & Compliance Architecture
 
 ## 1. Security Core Principles
 
-FINFLY is designed to handle sensitive personal and enterprise financial data. Security is not an afterthought; it is built into the architecture at the protocol level:
+FINEXFLY is designed to handle sensitive personal and enterprise financial data. Security is not an afterthought; it is built into the architecture at the protocol level:
 
 1. **Zero-Hallucination / Mathematical Grounding**: Financial figures are never generated probabilistically by AI. All numbers are computed deterministically.
 2. **Strict Multi-Tenant Row Level Security (RLS)**: PostgreSQL enforces complete isolation at the database layer. No user can access another user's personal accounts or an organization they do not belong to.
@@ -66,7 +66,7 @@ $$;
 function assertServerEnvironment() {
   if (typeof window !== 'undefined') {
     throw new Error(
-      '[FINFLY Security Violation] Server-side Supabase client must never be initialized in the browser.'
+      '[FINEXFLY Security Violation] Server-side Supabase client must never be initialized in the browser.'
     );
   }
 }

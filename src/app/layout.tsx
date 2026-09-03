@@ -6,8 +6,8 @@ import { AuthProvider } from "../lib/auth/AuthContext";
 import StyledJsxRegistry from "../components/StyledJsxRegistry";
 
 export const metadata: Metadata = {
-  title: "FINFLY — AI Financial Operating System",
-  description: "Sophisticated AI Finance Controller, Deterministic Digital Twin & Enterprise Money Flow Platform",
+  title: "FINEXFLY — AI Finance Controller",
+  description: "FINEXFLY is an AI Finance Controller for personal and business financial operations, reconciliation, insights, and decision intelligence.",
 };
 
 export const viewport: Viewport = {

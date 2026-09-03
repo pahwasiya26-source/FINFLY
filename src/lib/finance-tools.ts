@@ -16,15 +16,18 @@ export interface ToolExecutionResult<T = any> {
 /**
  * 1. Query Ground-Truth Financial Overview
  */
-export function getFinancialOverview(mode: 'PERSONAL' | 'BUSINESS' = 'PERSONAL'): ToolExecutionResult<FinancialOverview> {
-  const data = mode === 'PERSONAL' ? personalData : businessData;
+export function getFinancialOverview(
+  mode: 'PERSONAL' | 'BUSINESS' = 'PERSONAL',
+  customData?: FinancialOverview
+): ToolExecutionResult<FinancialOverview> {
+  const data = customData ? customData : (mode === 'PERSONAL' ? personalData : businessData);
   return {
     toolName: 'getFinancialOverview',
     success: true,
     inputs: { mode },
     data: { ...data },
     formula: 'Net Position = Cash + Investments + Assets - Liabilities',
-    source: `General Ledger Snapshot (${mode} Mode)`,
+    source: customData ? `Live General Ledger Snapshot (${mode} Mode)` : `General Ledger Snapshot (${mode} Mode)`,
     timestamp: new Date().toISOString(),
   };
 }

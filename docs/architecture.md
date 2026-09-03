@@ -1,11 +1,11 @@
-# FINFLY System Architecture
+# FINEXFLY System Architecture
 
 ## 1. Architectural Philosophy
 
-FINFLY is built on a fundamental principle:
+FINEXFLY is built on a fundamental principle:
 > **The AI plans, reasons about context, and explains. Deterministic code performs financial calculations.**
 
-Large Language Models (LLMs) are statistical text generators, not arithmetic engines. In FINFLY, LLMs are never permitted to compute or invent financial numbers. All balance sheet aggregations, forward cash simulations, runway projections, and tax estimates originate from verifiable, pure TypeScript and SQL calculation engines.
+Large Language Models (LLMs) are statistical text generators, not arithmetic engines. In FINEXFLY, LLMs are never permitted to compute or invent financial numbers. All balance sheet aggregations, forward cash simulations, runway projections, and tax estimates originate from verifiable, pure TypeScript and SQL calculation engines.
 
 ```
 ┌────────────────────────────────────────────────────────────────────────┐

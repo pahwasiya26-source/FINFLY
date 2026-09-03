@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense, useId } from 'react';
+import React, { useState, useEffect, Suspense, useId, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Sparkles,
@@ -26,15 +26,21 @@ function LoginFormContent() {
   const redirectUrl = searchParams.get('redirect') || '/';
   const urlError = searchParams.get('error');
 
-  const { user, signIn, signUp, error: authContextError, isDemoMode, clearError } = useAuth();
+  const { user, isLoading: authLoading, signIn, signUp, error: authContextError, isDemoMode, clearError } = useAuth();
 
   const [authMode, setAuthMode] = useState<'signin' | 'signup'>('signin');
-  const [email, setEmail] = useState('siya.pahwa@finfly.ai');
-  const [password, setPassword] = useState('••••••••••••');
-  const [fullName, setFullName] = useState('Siya Pahwa');
+  // Bug 2, 3, 4 fix: never pre-fill email, password, or name
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [fullName, setFullName] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
   const [localError, setLocalError] = useState<string | null>(null);
+  // Bug 1 & 6 fix: track post-signup confirmation state
+  const [confirmationSent, setConfirmationSent] = useState(false);
+  const [confirmedEmail, setConfirmedEmail] = useState('');
+  // Prevent duplicate submission races
+  const submittingRef = useRef(false);
 
   const fullNameId = useId();
   const emailId = useId();
@@ -46,32 +52,43 @@ function LoginFormContent() {
     }
   }, [urlError]);
 
-  // Redirect to dashboard if already logged in
+  // Bug 5 fix: use AuthContext isLoading (authLoading) not local submit state
+  // to guard the redirect — prevents double-push race conditions
   useEffect(() => {
-    if (user && !isLoading) {
+    if (user && !authLoading && !confirmationSent) {
       router.push(redirectUrl);
     }
-  }, [user, router, redirectUrl, isLoading]);
+  }, [user, authLoading, router, redirectUrl, confirmationSent]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (isLoading) return;
+    // Bug 5 fix: guard with both ref (synchronous) and state to prevent any race
+    if (isSubmitting || submittingRef.current) return;
+    submittingRef.current = true;
     setLocalError(null);
     clearError();
-    setIsLoading(true);
+    setIsSubmitting(true);
 
     try {
       if (authMode === 'signin') {
         const res = await signIn(email, password);
         if (res.success) {
-          router.push(redirectUrl);
+          // onAuthStateChange in AuthContext will update user state;
+          // the redirect useEffect above will fire automatically.
+          // Do not push here to avoid double redirect.
         } else {
           setLocalError(res.error || 'Failed to sign in. Please check your credentials.');
         }
       } else {
         const res = await signUp(email, password, fullName);
         if (res.success) {
-          router.push(redirectUrl);
+          if (res.requiresConfirmation) {
+            // Bug 1 fix: do NOT redirect. Show confirmation UI instead.
+            setConfirmedEmail(email);
+            setConfirmationSent(true);
+          }
+          // If requiresConfirmation is false, AuthContext already has a session;
+          // the redirect useEffect will fire automatically via user state change.
         } else {
           setLocalError(res.error || 'Failed to create account. Please try again.');
         }
@@ -79,11 +96,115 @@ function LoginFormContent() {
     } catch (err: any) {
       setLocalError(err?.message || 'An unexpected authentication error occurred.');
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
+      submittingRef.current = false;
     }
   };
 
   const activeError = localError || authContextError;
+  const isLoading = isSubmitting; // alias for JSX below (button disabled state)
+
+  // Bug 6 fix: full confirmation-sent UI — shown after signup when email confirmation is required
+  if (confirmationSent) {
+    return (
+      <div style={{ width: '100%', maxWidth: '440px', margin: '0 auto' }}>
+        <div
+          style={{
+            background: 'linear-gradient(135deg, rgba(16,185,129,0.08) 0%, rgba(16,185,129,0.03) 100%)',
+            border: '1px solid rgba(16,185,129,0.25)',
+            borderRadius: '16px',
+            padding: '32px 28px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            gap: '16px',
+            textAlign: 'center',
+          }}
+        >
+          <div
+            style={{
+              width: '56px',
+              height: '56px',
+              borderRadius: '50%',
+              background: 'rgba(16,185,129,0.12)',
+              border: '1px solid rgba(16,185,129,0.3)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+            }}
+          >
+            <CheckCircle2 size={28} color="var(--accent-primary)" />
+          </div>
+
+          <div>
+            <h2
+              style={{
+                fontSize: '1.4rem',
+                fontWeight: 800,
+                color: 'var(--text-primary)',
+                marginBottom: '8px',
+                letterSpacing: '-0.02em',
+              }}
+            >
+              Check your inbox
+            </h2>
+            <p style={{ fontSize: '0.88rem', color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+              We sent a confirmation link to{' '}
+              <strong style={{ color: 'var(--text-primary)' }}>{confirmedEmail}</strong>.
+              Click the link in the email to activate your account and sign in.
+            </p>
+          </div>
+
+          <div
+            style={{
+              background: 'var(--bg-surface-elevated)',
+              border: '1px solid var(--border-subtle)',
+              borderRadius: '10px',
+              padding: '12px 16px',
+              fontSize: '0.81rem',
+              color: 'var(--text-tertiary)',
+              lineHeight: 1.5,
+              width: '100%',
+            }}
+          >
+            <strong style={{ color: 'var(--text-secondary)' }}>Didn&apos;t receive it?</strong> Check your spam or junk folder.
+            The link expires after 24 hours.
+          </div>
+
+          <button
+            type="button"
+            className="btn-ghost"
+            style={{ width: '100%', marginTop: '4px' }}
+            onClick={() => {
+              setConfirmationSent(false);
+              setAuthMode('signin');
+              setEmail(confirmedEmail);
+              setPassword('');
+              setLocalError(null);
+              clearError();
+            }}
+          >
+            Back to Sign In
+          </button>
+        </div>
+
+        <div
+          style={{
+            marginTop: '16px',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '8px',
+            fontSize: '0.76rem',
+            color: 'var(--text-tertiary)',
+          }}
+        >
+          <Shield size={14} color="var(--accent-primary)" />
+          <span>Your account is secured with Supabase Auth</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ width: '100%', maxWidth: '440px', margin: '0 auto' }}>
@@ -193,7 +314,7 @@ function LoginFormContent() {
       )}
 
       {/* FORM */}
-      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+      <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
         {authMode === 'signup' && (
           <div>
             <label
@@ -319,24 +440,24 @@ function LoginFormContent() {
         {/* SUBMIT BUTTON */}
         <button
           type="submit"
-          disabled={isLoading}
+          disabled={isLoading || authLoading}
           className="btn-primary"
           style={{
             width: '100%',
-            padding: '12px',
+            padding: '14px',
             fontSize: '0.94rem',
             fontWeight: 700,
             marginTop: '8px',
           }}
         >
-          {isLoading ? (
+          {isLoading || authLoading ? (
             <>
               <RefreshCw size={16} className="animate-spin" />
-              <span>Verifying Credentials...</span>
+              <span>{authMode === 'signin' ? 'Signing In...' : 'Creating Account...'}</span>
             </>
           ) : (
             <>
-              <span>{authMode === 'signin' ? 'Sign In to FINFLY OS' : 'Create Verified Workspace'}</span>
+              <span>{authMode === 'signin' ? 'Sign In to FINEXFLY' : 'Create Verified Workspace'}</span>
               <ArrowRight size={16} />
             </>
           )}
@@ -409,7 +530,7 @@ export default function LoginPage() {
               <Sparkles size={20} strokeWidth={2.4} />
             </div>
             <span style={{ fontFamily: 'Outfit', fontWeight: 800, fontSize: '1.4rem', letterSpacing: '0.04em' }}>
-              FINFLY
+              FINEXFLY
             </span>
           </div>
           <p style={{ fontSize: '0.88rem', color: 'var(--text-tertiary)' }}>

@@ -19,12 +19,31 @@ import {
   Building2,
   SlidersHorizontal,
   RefreshCw,
-  Download
+  Download,
+  Plus,
+  Trash2,
+  Loader2,
+  X,
+  AlertTriangle
 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuth } from '../../lib/auth/AuthContext';
+import { AddTransactionModal } from '../../components/AddTransactionModal';
+import { AddAccountModal } from '../../components/AddAccountModal';
 
 export default function MoneyFlowPage() {
-  const { mode, transactions } = useStore();
+  const { mode, transactions, accounts, removeTransaction, fetchAndHydrate, dataMode, isHydrating, dataError } = useStore();
+  const { user } = useAuth();
+
+  const [isAddTxOpen, setIsAddTxOpen] = useState(false);
+  const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    if (user?.id && dataMode !== 'DEMO') {
+      fetchAndHydrate(user.id);
+    }
+  }, [user?.id, dataMode, fetchAndHydrate]);
 
   // Filter States
   const [selectedEntity, setSelectedEntity] = useState<'ALL' | 'PERSONAL' | 'BUSINESS'>(mode);
@@ -34,9 +53,46 @@ export default function MoneyFlowPage() {
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [dateRange, setDateRange] = useState<string>('Q3 2026');
 
-  // Filter logic
+  // Dynamic available accounts from real data or demo
+  const availableAccounts = useMemo(() => {
+    if (dataMode === 'DEMO') {
+      return ['HDFC Wealth Checking', 'ICICI Savings', 'Axis Treasury', 'Razorpay Payouts', 'Zerodha Broking'];
+    }
+    const set = new Set<string>();
+    accounts.forEach((a) => set.add(a.name));
+    transactions.forEach((t) => {
+      if (t.account) set.add(t.account);
+    });
+    return Array.from(set);
+  }, [dataMode, accounts, transactions]);
+
+  // Dynamic available categories
+  const availableCategories = useMemo(() => {
+    const defaultCats = [
+      'Salary',
+      'Client Revenue',
+      'Consulting',
+      'Housing',
+      'Travel',
+      'Software & Cloud',
+      'Payroll & HR',
+      'Dining & Groceries',
+      'Investments',
+      'Tax & Compliance',
+      'Utilities',
+      'Healthcare',
+      'Other',
+    ];
+    const set = new Set<string>(defaultCats);
+    transactions.forEach((t) => {
+      if (t.category) set.add(t.category);
+    });
+    return Array.from(set);
+  }, [transactions]);
+
+  // Filter & Deterministic Sort: newest date first, then stable tie-breaker by id
   const filteredTransactions = useMemo(() => {
-    return transactions.filter((tx) => {
+    const list = transactions.filter((tx) => {
       // Entity filter
       if (selectedEntity !== 'ALL' && tx.entity !== selectedEntity) return false;
       // Account filter
@@ -55,7 +111,21 @@ export default function MoneyFlowPage() {
       }
       return true;
     });
+
+    return list.sort((a, b) => {
+      const dateCmp = new Date(b.date).getTime() - new Date(a.date).getTime();
+      if (dateCmp !== 0) return dateCmp;
+      return b.id.localeCompare(a.id);
+    });
   }, [transactions, selectedEntity, selectedAccount, selectedCategory, selectedType, searchQuery]);
+
+  const handleDeleteTx = async (txId: string) => {
+    setActionError(null);
+    const res = await removeTransaction(txId, user?.id);
+    if (!res.success) {
+      setActionError(res.error || 'Failed to delete transaction.');
+    }
+  };
 
   // Dynamically computed metrics based on active filtered transactions
   const totalInflow = useMemo(() => {
@@ -101,14 +171,67 @@ export default function MoneyFlowPage() {
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement('a');
     link.setAttribute('href', encodedUri);
-    link.setAttribute('download', `finfly_money_flow_${selectedEntity.toLowerCase()}_${Date.now()}.csv`);
+    link.setAttribute('download', `finexfly_money_flow_${selectedEntity.toLowerCase()}_${Date.now()}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
+  if (isHydrating && dataMode !== 'DEMO') {
+    return (
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%', padding: '40px 0' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <Loader2 size={20} color="var(--accent-primary)" style={{ animation: 'spin 1s linear infinite' }} />
+          <span style={{ fontSize: '0.94rem', color: 'var(--text-secondary)' }}>Synchronizing money flow ledger...</span>
+        </div>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '16px' }}>
+          {[...Array(4)].map((_, i) => (
+            <div key={i} className="glass-panel" style={{ padding: '20px 24px', height: '105px', opacity: 0.5 }} />
+          ))}
+        </div>
+        <div className="glass-panel" style={{ padding: '24px', height: '280px', opacity: 0.5 }} />
+        <style jsx>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
+      </div>
+    );
+  }
+
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '28px', maxWidth: '1440px', margin: '0 auto', width: '100%' }}>
+      {/* Synchronization Error Banner */}
+      {dataError && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '12px', fontSize: '0.86rem', color: 'var(--danger)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={17} />
+            <span>Ledger Synchronization Error: {dataError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => user?.id && fetchAndHydrate(user.id)}
+            className="btn-secondary"
+            style={{ fontSize: '0.78rem', padding: '4px 10px' }}
+          >
+            Retry Sync
+          </button>
+        </div>
+      )}
+
+      {/* Action Error Banner */}
+      {actionError && (
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '12px 18px', background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', borderRadius: '12px', fontSize: '0.86rem', color: 'var(--danger)' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <AlertTriangle size={17} />
+            <span>Action Failed: {actionError}</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => setActionError(null)}
+            style={{ background: 'transparent', border: 'none', color: 'var(--danger)', cursor: 'pointer' }}
+          >
+            <X size={15} />
+          </button>
+        </div>
+      )}
+
       {/* ── HEADER ── */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '16px' }}>
         <div>
@@ -129,6 +252,15 @@ export default function MoneyFlowPage() {
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '10px', flexWrap: 'wrap' }}>
+          <button
+            type="button"
+            onClick={() => setIsAddTxOpen(true)}
+            className="btn-primary"
+            style={{ fontSize: '0.84rem' }}
+          >
+            <Plus size={15} />
+            <span>Record Transaction</span>
+          </button>
           <button type="button" onClick={handleExportCSV} className="btn-secondary" style={{ fontSize: '0.84rem' }}>
             <Download size={15} />
             <span>Export Filtered CSV</span>
@@ -246,11 +378,11 @@ export default function MoneyFlowPage() {
               style={{ fontSize: '0.84rem' }}
             >
               <option value="ALL">All Financial Accounts</option>
-              <option value="HDFC Wealth Checking">HDFC Wealth Checking</option>
-              <option value="ICICI Savings">ICICI Savings</option>
-              <option value="Axis Treasury">Axis Treasury</option>
-              <option value="Razorpay Payouts">Razorpay Payouts</option>
-              <option value="Zerodha Broking">Zerodha Broking</option>
+              {availableAccounts.map((accName) => (
+                <option key={accName} value={accName}>
+                  {accName}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -266,15 +398,11 @@ export default function MoneyFlowPage() {
               style={{ fontSize: '0.84rem' }}
             >
               <option value="ALL">All Categories</option>
-              <option value="Salary">Salary Inflow</option>
-              <option value="Client Revenue">Client Revenue</option>
-              <option value="Housing">Housing &amp; Rent</option>
-              <option value="Travel">Travel &amp; Flights</option>
-              <option value="Software & Cloud">Software &amp; Cloud</option>
-              <option value="Payroll & HR">Payroll &amp; HR</option>
-              <option value="Dining & Groceries">Dining &amp; Groceries</option>
-              <option value="Investments">Investments</option>
-              <option value="Tax & Compliance">Tax &amp; Compliance</option>
+              {availableCategories.map((cat) => (
+                <option key={cat} value={cat}>
+                  {cat}
+                </option>
+              ))}
             </select>
           </div>
 
@@ -364,7 +492,47 @@ export default function MoneyFlowPage() {
           <span className="pill-badge pill-emerald">Zero Ledger Drift</span>
         </div>
 
-        {filteredTransactions.length === 0 ? (
+        {transactions.length === 0 ? (
+          <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
+            <Wallet size={36} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
+            <h4 style={{ fontSize: '1.1rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '6px' }}>
+              General Ledger is Empty
+            </h4>
+            <p style={{ fontSize: '0.86rem', color: 'var(--text-tertiary)', maxWidth: '420px', margin: '0 auto 20px auto', lineHeight: 1.5 }}>
+              No transactions have been recorded in this workspace yet. Record your first transaction or add a financial account to populate the ledger.
+            </p>
+            <div style={{ display: 'flex', gap: '10px', justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button
+                type="button"
+                className="btn-primary"
+                onClick={() => setIsAddTxOpen(true)}
+                style={{ fontSize: '0.84rem' }}
+              >
+                <Plus size={15} />
+                <span>Record First Transaction</span>
+              </button>
+              <button
+                type="button"
+                className="btn-secondary"
+                onClick={() => setIsAddAccountOpen(true)}
+                style={{ fontSize: '0.84rem' }}
+              >
+                <Plus size={15} />
+                <span>Add Account</span>
+              </button>
+              {dataMode !== 'DEMO' && (
+                <button
+                  type="button"
+                  className="btn-secondary"
+                  onClick={() => useStore.getState().activateDemo()}
+                  style={{ fontSize: '0.84rem' }}
+                >
+                  <span>Explore Demo Workspace</span>
+                </button>
+              )}
+            </div>
+          </div>
+        ) : filteredTransactions.length === 0 ? (
           <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--text-secondary)' }}>
             <Filter size={32} style={{ margin: '0 auto 12px auto', opacity: 0.4 }} />
             <h4 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--text-primary)', marginBottom: '4px' }}>No Transactions Match Active Filters</h4>
@@ -398,6 +566,7 @@ export default function MoneyFlowPage() {
                   <th>Direction</th>
                   <th>Amount</th>
                   <th>Status</th>
+                  <th style={{ width: '40px' }}></th>
                 </tr>
               </thead>
               <tbody>
@@ -435,6 +604,27 @@ export default function MoneyFlowPage() {
                         <span>{tx.status}</span>
                       </span>
                     </td>
+                    <td>
+                      <button
+                        type="button"
+                        onClick={() => handleDeleteTx(tx.id)}
+                        style={{
+                          background: 'transparent',
+                          border: 'none',
+                          color: 'var(--text-tertiary)',
+                          cursor: 'pointer',
+                          padding: '4px',
+                          borderRadius: '4px',
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'center',
+                        }}
+                        title="Delete transaction"
+                        aria-label="Delete transaction"
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -442,6 +632,22 @@ export default function MoneyFlowPage() {
           </div>
         )}
       </div>
+
+      {/* Add Transaction Modal */}
+      <AddTransactionModal
+        open={isAddTxOpen}
+        onClose={() => setIsAddTxOpen(false)}
+        onOpenAddAccount={() => {
+          setIsAddTxOpen(false);
+          setIsAddAccountOpen(true);
+        }}
+      />
+
+      {/* Add Account Modal */}
+      <AddAccountModal
+        open={isAddAccountOpen}
+        onClose={() => setIsAddAccountOpen(false)}
+      />
     </div>
   );
 }

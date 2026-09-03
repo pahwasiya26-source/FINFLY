@@ -1,8 +1,10 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { User, Session, AuthError } from '@supabase/supabase-js';
+import { User, Session } from '@supabase/supabase-js';
 import { getSupabaseBrowserClient, isSupabaseConfigured } from '../supabase/client';
+import { getAuthCallbackUrl } from './site-url';
+import { useStore } from '../../store/useStore';
 
 export interface UserProfile {
   id: string;
@@ -19,7 +21,11 @@ interface AuthContextType {
   isDemoMode: boolean;
   error: string | null;
   signIn: (email: string, password: string) => Promise<{ success: boolean; error?: string }>;
-  signUp: (email: string, password: string, fullName?: string) => Promise<{ success: boolean; error?: string }>;
+  signUp: (
+    email: string,
+    password: string,
+    fullName?: string
+  ) => Promise<{ success: boolean; requiresConfirmation?: boolean; error?: string }>;
   signOut: () => Promise<void>;
   clearError: () => void;
 }
@@ -60,7 +66,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     if (configured && supabase) {
       // Production or active Supabase environment
       setIsDemoMode(false);
-      
+
       // Get initial session
       supabase.auth.getSession().then(({ data: { session: initialSession }, error: sessionError }) => {
         if (sessionError) {
@@ -71,24 +77,59 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           setProfile({
             id: initialSession.user.id,
             email: initialSession.user.email || '',
-            fullName: initialSession.user.user_metadata?.full_name || initialSession.user.email?.split('@')[0] || 'User',
+            fullName:
+              initialSession.user.user_metadata?.full_name ||
+              initialSession.user.email?.split('@')[0] ||
+              'User',
           });
         }
         setIsLoading(false);
       });
 
       // Listen to auth changes
-      const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, newSession) => {
+      const {
+        data: { subscription },
+      } = supabase.auth.onAuthStateChange((_event, newSession) => {
         setSession(newSession);
         setUser(newSession?.user || null);
         if (newSession?.user) {
           setProfile({
             id: newSession.user.id,
             email: newSession.user.email || '',
-            fullName: newSession.user.user_metadata?.full_name || newSession.user.email?.split('@')[0] || 'User',
+            fullName:
+              newSession.user.user_metadata?.full_name ||
+              newSession.user.email?.split('@')[0] ||
+              'User',
           });
+          Promise.resolve(
+            supabase
+              .from('profiles')
+              .upsert(
+                {
+                  id: newSession.user.id,
+                  email: newSession.user.email || '',
+                  full_name:
+                    newSession.user.user_metadata?.full_name ||
+                    newSession.user.email?.split('@')[0] ||
+                    '',
+                  updated_at: new Date().toISOString(),
+                },
+                { onConflict: 'id' }
+              )
+          ).then(() => {}).catch(() => {});
         } else {
           setProfile(null);
+          useStore.setState({
+            dataMode: 'EMPTY',
+            accounts: [],
+            transactions: [],
+            rawDbTransactions: [],
+            investments: [],
+            invoices: [],
+            obligations: [],
+            isHydrating: false,
+            dataError: null,
+          });
         }
         setIsLoading(false);
       });
@@ -111,13 +152,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const isLoggedOut = storedDemoSession === 'logged_out';
 
         if (!isLoggedOut) {
-          setUser(DEMO_USER);
-          setProfile(DEMO_PROFILE);
+          setIsDemoMode(true);
+          const devUser = {
+            id: 'usr_dev_demo',
+            email: 'dev@finfly.internal',
+            app_metadata: { provider: 'email' },
+            user_metadata: { full_name: 'Siya Pahwa' },
+            aud: 'authenticated',
+            created_at: new Date().toISOString(),
+          };
+          setUser(devUser as any);
+          setProfile({
+            id: 'usr_dev_demo',
+            email: 'dev@finfly.internal',
+            fullName: 'Siya Pahwa',
+          });
+          setSession({
+            access_token: 'dev-demo-access-token',
+            token_type: 'bearer',
+            expires_in: 3600,
+            refresh_token: 'dev-demo-refresh-token',
+            user: devUser as any,
+          });
         } else {
+          setIsDemoMode(false);
           setUser(null);
           setProfile(null);
+          setSession(null);
         }
-        setIsDemoMode(true);
       }
       setIsLoading(false);
     }
@@ -127,7 +189,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setError(null);
     const supabase = getSupabaseBrowserClient();
 
-    if (isSupabaseConfigured() && supabase) {
+    if (supabase) {
       const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
         email,
         password,
@@ -138,14 +200,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         return { success: false, error: authError.message };
       }
 
-      if (authData.user) {
+      if (authData.user && authData.session) {
         setUser(authData.user);
         setSession(authData.session);
         setProfile({
           id: authData.user.id,
           email: authData.user.email || '',
-          fullName: authData.user.user_metadata?.full_name || authData.user.email?.split('@')[0] || 'User',
+          fullName:
+            authData.user.user_metadata?.full_name ||
+            authData.user.email?.split('@')[0] ||
+            'User',
         });
+        // Non-blocking profile synchronization
+        Promise.resolve(
+          supabase
+            .from('profiles')
+            .upsert(
+              {
+                id: authData.user.id,
+                email: authData.user.email || '',
+                full_name:
+                  authData.user.user_metadata?.full_name ||
+                  authData.user.email?.split('@')[0] ||
+                  '',
+                updated_at: new Date().toISOString(),
+              },
+              { onConflict: 'id' }
+            )
+        ).then(() => {}).catch(() => {});
       }
       return { success: true };
     }
@@ -162,20 +244,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       document.cookie = 'sb-finfly-auth-token=active; path=/; max-age=86400; SameSite=Lax';
       document.cookie = 'finfly_session=active; path=/; max-age=86400; SameSite=Lax';
     }
-    setUser(DEMO_USER);
-    setProfile(DEMO_PROFILE);
+    const devUser = {
+      id: 'usr_dev_demo',
+      email: email || 'dev@finfly.internal',
+      app_metadata: { provider: 'email' },
+      user_metadata: { full_name: 'Siya Pahwa' },
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
+    };
+    setUser(devUser as any);
+    setProfile({
+      id: 'usr_dev_demo',
+      email: email || 'dev@finfly.internal',
+      fullName: 'Siya Pahwa',
+    });
+    setSession({
+      access_token: 'dev-demo-access-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'dev-demo-refresh-token',
+      user: devUser as any,
+    });
+    setIsDemoMode(true);
     return { success: true };
   };
 
   const signUp = async (
     email: string,
     password: string,
-    fullName: string = ''
-  ): Promise<{ success: boolean; error?: string }> => {
+    fullName?: string
+  ): Promise<{ success: boolean; requiresConfirmation?: boolean; error?: string }> => {
     setError(null);
     const supabase = getSupabaseBrowserClient();
 
-    if (isSupabaseConfigured() && supabase) {
+    if (supabase) {
+      const callbackUrl = getAuthCallbackUrl();
+
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email,
         password,
@@ -183,15 +287,24 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           data: {
             full_name: fullName,
           },
+          emailRedirectTo: callbackUrl,
         },
       });
 
       if (authError) {
-        setError(authError.message);
-        return { success: false, error: authError.message };
+        let userFriendlyMsg = authError.message;
+        if (authError.message.toLowerCase().includes('rate limit')) {
+          userFriendlyMsg =
+            'Email delivery rate limit reached. If you previously created an account, please check your inbox for the confirmation email or sign in directly.';
+        }
+        setError(userFriendlyMsg);
+        return { success: false, error: userFriendlyMsg };
       }
 
-      if (authData.user) {
+      // Determine if email confirmation is required before accessing session
+      const requiresConfirmation = !authData.session || !authData.user?.confirmed_at;
+
+      if (authData.user && authData.session) {
         setUser(authData.user);
         setSession(authData.session);
         setProfile({
@@ -200,7 +313,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           fullName: fullName || authData.user.email?.split('@')[0] || 'User',
         });
       }
-      return { success: true };
+
+      return { success: true, requiresConfirmation };
     }
 
     if (process.env.NODE_ENV === 'production') {
@@ -215,14 +329,29 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       document.cookie = 'sb-finfly-auth-token=active; path=/; max-age=86400; SameSite=Lax';
       document.cookie = 'finfly_session=active; path=/; max-age=86400; SameSite=Lax';
     }
-    const demoUser: User = {
-      ...DEMO_USER,
+    const devUser = {
+      id: 'usr_dev_demo',
       email,
-      user_metadata: { full_name: fullName || 'Demo User' },
+      app_metadata: { provider: 'email' },
+      user_metadata: { full_name: fullName || 'Siya Pahwa' },
+      aud: 'authenticated',
+      created_at: new Date().toISOString(),
     };
-    setUser(demoUser);
-    setProfile({ id: demoUser.id, email, fullName: fullName || 'Demo User' });
-    return { success: true };
+    setUser(devUser as any);
+    setProfile({
+      id: 'usr_dev_demo',
+      email,
+      fullName: fullName || 'Siya Pahwa',
+    });
+    setSession({
+      access_token: 'dev-demo-access-token',
+      token_type: 'bearer',
+      expires_in: 3600,
+      refresh_token: 'dev-demo-refresh-token',
+      user: devUser as any,
+    });
+    setIsDemoMode(true);
+    return { success: true, requiresConfirmation: false };
   };
 
   const signOut = async (): Promise<void> => {
@@ -240,6 +369,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setProfile(null);
     setSession(null);
+    useStore.setState({
+      dataMode: 'EMPTY',
+      accounts: [],
+      transactions: [],
+      rawDbTransactions: [],
+      investments: [],
+      invoices: [],
+      obligations: [],
+      isHydrating: false,
+      dataError: null,
+    });
   };
 
   const clearError = () => setError(null);

@@ -1,5 +1,5 @@
 /**
- * FINFLY Route & Health Verification Script
+ * FINEXFLY Route & Health Verification Script
  * Checks all 20 application routes for HTTP 200 response and content validity.
  */
 
@@ -27,7 +27,7 @@ const ROUTES = [
 const BASE_URL = process.env.BASE_URL || 'http://localhost:3000';
 
 async function verifyRoutes() {
-  console.log(`\n🔍 Verifying FINFLY Routes on ${BASE_URL}...\n`);
+  console.log(`\n🔍 Verifying FINEXFLY Routes on ${BASE_URL}...\n`);
   let passed = 0;
   let failed = 0;
 

@@ -1,4 +1,4 @@
-# FINFLY Project Roadmap & Milestones
+# FINEXFLY Project Roadmap & Milestones
 
 ## Completed Milestones (Phase 1 Foundation)
 

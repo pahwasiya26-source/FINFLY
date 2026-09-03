@@ -1,6 +1,4 @@
-<div align="center">
-
-# ⚡ FINFLY — AI Financial Operating System
+# ⚡ FINEXFLY — AI Finance Controller
 
 **Deterministic Financial Intelligence, Forward Digital Twin & Enterprise Money Flow Platform**
 
@@ -15,13 +13,13 @@
 
 ---
 
-## 🎯 The Problem FINFLY Solves
+## 🎯 The Problem FINEXFLY Solves
 
 Modern financial software suffers from two critical flaws:
 1. **Generic Static Dashboards**: Backward-looking accounting software displays historical transactions but fails to provide forward-looking predictive simulation or intelligent reasoning.
 2. **Hallucination-Prone AI Tools**: Generative AI assistants attempt to perform arithmetic probabilistically, resulting in fabricated numbers, inaccurate runway calculations, and dangerous financial advice.
 
-**FINFLY resolves this with a decoupled architecture:**
+**FINEXFLY resolves this with a decoupled architecture:**
 > **The AI plans, reasons about context, and explains. Deterministic code performs all financial calculations.**
 
 ---
@@ -83,7 +81,7 @@ Modern financial software suffers from two critical flaws:
 
 ## 🔒 Security, Authentication & Row Level Security (RLS)
 
-FINFLY enforces bank-grade security guardrails:
+FINEXFLY enforces bank-grade security guardrails:
 
 1. **PostgreSQL Row Level Security**: All financial tables (`financial_accounts`, `financial_transactions`, `reconciliation_records`, `decision_traces`) require authentication.
    - **Personal accounts**: `user_id = auth.uid() AND organization_id IS NULL`
@@ -166,7 +164,7 @@ Copy the template to `.env.local`:
 cp .env.example .env.local
 ```
 
-> **Note**: In development mode (`NODE_ENV=development`), if Supabase keys are not set, FINFLY automatically activates **Demo Fallback Mode** (`siya.pahwa@finfly.ai`), allowing complete local evaluation of all UI components, simulations, and financial tools without configuring a remote database.
+> **Note**: In development mode (`NODE_ENV=development`), if Supabase keys are not set, FINEXFLY automatically activates **Demo Fallback Mode** (`siya.pahwa@finfly.ai`), allowing complete local evaluation of all UI components, simulations, and financial tools without configuring a remote database.
 
 ### 4. Running the Development Server
 ```bash
@@ -178,7 +176,7 @@ Open [http://localhost:3000](http://localhost:3000) in your browser.
 
 ## 🧪 Testing & Verification
 
-FINFLY includes an automated test suite verifying mathematical engines, security enclaves, and route rendering:
+FINEXFLY includes an automated test suite verifying mathematical engines, security enclaves, and route rendering:
 
 ```bash
 # Run all unit and security tests
@@ -209,4 +207,4 @@ npm run verify
 
 ## 📄 License
 
-MIT License. Copyright (c) 2026 FINFLY Technologies Inc.
+MIT License. Copyright (c) 2026 FINEXFLY Technologies Inc.
