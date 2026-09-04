@@ -219,8 +219,8 @@ export default function FinancialTwinPage() {
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="number"
-                min="1000"
-                step="5000"
+                min="0"
+                step="1"
                 className="input-premium"
                 placeholder="Amount in ₹"
                 value={newExpense}
@@ -241,8 +241,8 @@ export default function FinancialTwinPage() {
             <div style={{ display: 'flex', gap: '8px' }}>
               <input
                 type="number"
-                min="1000"
-                step="5000"
+                min="0"
+                step="1"
                 className="input-premium"
                 placeholder="Amount in ₹"
                 value={newIncome}
