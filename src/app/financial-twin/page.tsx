@@ -151,7 +151,7 @@ export default function FinancialTwinPage() {
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <span className="pill-badge pill-emerald">Deterministic Digital Twin</span>
             <span style={{ color: 'var(--text-muted)' }}>•</span>
-            <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>Zero-Hallucination Math</span>
+            <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>Deterministic Math</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
             <div style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'var(--accent-primary-subtle)', color: 'var(--accent-primary)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>

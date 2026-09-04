@@ -447,16 +447,26 @@ export default function DashboardHome() {
       )}
 
       {/* ── TOP KPI STRIP ── */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '14px' }}>
+      <div className="cmd-kpi-grid">
         {/* KPI 1: Net Position */}
-        <div className="glass-panel" style={{ padding: '18px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+        <div className="glass-panel" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0, position: 'relative' }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '6px' }}>
               <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
                 {isBusiness ? 'Enterprise Net Worth' : 'Net Financial Position'}
               </span>
-              <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px' }}>DETERMINISTIC</span>
+              <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px', flexShrink: 0 }}>DETERMINISTIC</span>
             </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: 1.15 }}>
+              <AnimatedNumber value={data.netPosition} format="currency" />
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px', fontSize: '0.76rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
+              <ArrowUpRight size={13} strokeWidth={2.4} />
+              <span>{dataMode === 'DEMO' ? `+${data.growthRateYoY || 12.4}% YoY growth` : 'Audited General Ledger'}</span>
+            </div>
+          </div>
+
+          <div style={{ marginTop: '10px' }}>
             <CalculationPanel
               title={isBusiness ? 'Net Enterprise Position' : 'Net Financial Position'}
               formula="Cash + Investments + Assets - Liabilities"
@@ -469,25 +479,20 @@ export default function DashboardHome() {
               result={`₹${data.netPosition.toLocaleString('en-IN')}`}
             />
           </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: 1.15 }}>
-            <AnimatedNumber value={data.netPosition} format="currency" />
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '4px', marginTop: '6px', fontSize: '0.76rem', color: 'var(--accent-primary)', fontWeight: 600 }}>
-            <ArrowUpRight size={13} strokeWidth={2.4} />
-            <span>{dataMode === 'DEMO' ? `+${data.growthRateYoY || 12.4}% YoY growth` : 'Audited General Ledger'}</span>
-          </div>
         </div>
 
         {/* KPI 2: Total Liquid Cash */}
-        <div className="glass-panel" style={{ padding: '18px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
-              Liquid Cash Reserve
-            </span>
-            <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px' }}>VERIFIED</span>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: 1.15 }}>
-            <AnimatedNumber value={data.cash} format="currency" />
+        <div className="glass-panel" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '6px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
+                Liquid Cash Reserve
+              </span>
+              <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px', flexShrink: 0 }}>VERIFIED</span>
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: 1.15 }}>
+              <AnimatedNumber value={data.cash} format="currency" />
+            </div>
           </div>
           <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
             Checking &amp; high-yield sweep
@@ -495,15 +500,17 @@ export default function DashboardHome() {
         </div>
 
         {/* KPI 3: Monthly Net Flow */}
-        <div className="glass-panel" style={{ padding: '18px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
-              Net Monthly Flow
-            </span>
-            <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px' }}>NET SURPLUS</span>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit', color: data.monthlySurplus >= 0 ? 'var(--accent-primary)' : 'var(--danger)', lineHeight: 1.15 }}>
-            {data.monthlySurplus < 0 ? '-' : '+'}<AnimatedNumber value={Math.abs(data.monthlySurplus)} format="currency" />
+        <div className="glass-panel" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '6px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
+                Net Monthly Flow
+              </span>
+              <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px', flexShrink: 0 }}>NET SURPLUS</span>
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit', color: data.monthlySurplus >= 0 ? 'var(--accent-primary)' : 'var(--danger)', lineHeight: 1.15 }}>
+              {data.monthlySurplus < 0 ? '-' : '+'}<AnimatedNumber value={Math.abs(data.monthlySurplus)} format="currency" />
+            </div>
           </div>
           <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
             Savings rate: {data.savingsRate}%
@@ -511,15 +518,17 @@ export default function DashboardHome() {
         </div>
 
         {/* KPI 4: Runway Buffer */}
-        <div className="glass-panel" style={{ padding: '18px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
-              Runway Buffer
-            </span>
-            <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px' }}>LIQUIDITY MODEL</span>
-          </div>
-          <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: 1.15 }}>
-            {dataMode === 'EMPTY' && data.cash === 0 ? '0' : runwayResult.data.runwayMonths} Months
+        <div className="glass-panel" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '6px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
+                Runway Buffer
+              </span>
+              <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px', flexShrink: 0 }}>LIQUIDITY MODEL</span>
+            </div>
+            <div style={{ fontSize: '1.6rem', fontWeight: 800, fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: 1.15 }}>
+              {dataMode === 'EMPTY' && data.cash === 0 ? '0' : runwayResult.data.runwayMonths} Months
+            </div>
           </div>
           <div style={{ fontSize: '0.76rem', color: 'var(--accent-primary)', marginTop: '6px' }}>
             ● {dataMode === 'EMPTY' && data.cash === 0 ? 'AWAITING DATA' : runwayResult.data.status}
@@ -527,15 +536,17 @@ export default function DashboardHome() {
         </div>
 
         {/* KPI 5: Investments & Liabilities */}
-        <div className="glass-panel" style={{ padding: '18px 20px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '6px' }}>
-            <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
-              Investments / Debt
-            </span>
-            <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px' }}>BALANCE SHEET</span>
-          </div>
-          <div style={{ fontSize: '1.35rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: 1.15 }}>
-            ₹{(data.investments / 100000).toFixed(1)}L / ₹{(data.liabilities / 100000).toFixed(1)}L
+        <div className="glass-panel" style={{ padding: '18px 20px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between', minWidth: 0 }}>
+          <div>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px', gap: '6px' }}>
+              <span style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-tertiary)', letterSpacing: '0.05em' }}>
+                Investments / Debt
+              </span>
+              <span className="pill-badge pill-neutral" style={{ fontSize: '0.58rem', padding: '1px 5px', flexShrink: 0 }}>BALANCE SHEET</span>
+            </div>
+            <div style={{ fontSize: '1.35rem', fontWeight: 700, fontFamily: 'Outfit', color: 'var(--text-primary)', lineHeight: 1.15 }}>
+              ₹{(data.investments / 100000).toFixed(1)}L / ₹{(data.liabilities / 100000).toFixed(1)}L
+            </div>
           </div>
           <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)', marginTop: '6px' }}>
             Collateralized &amp; current
@@ -545,9 +556,9 @@ export default function DashboardHome() {
 
       {/* ── HERO 3D CORE & POSITION HERO ── */}
       <div
-        className="glass-hero"
+        className="glass-hero cmd-hero-grid"
         style={{
-          padding: '30px 36px',
+          padding: '28px 32px',
           display: 'grid',
           gridTemplateColumns: '1.2fr 1fr',
           gap: '28px',
@@ -631,7 +642,7 @@ export default function DashboardHome() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
               <span className="pill-badge pill-emerald">End-to-End Operating Loop</span>
-              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Zero-Hallucination Architecture</span>
+              <span style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>Deterministic Finance Architecture</span>
             </div>
             <h3 style={{ fontSize: '1.18rem', fontWeight: 800 }}>Razorpay AI Buildathon Financial Control System</h3>
             <p style={{ fontSize: '0.82rem', color: 'var(--text-secondary)', marginTop: '2px' }}>
@@ -890,7 +901,7 @@ export default function DashboardHome() {
                 <div style={{ fontSize: '0.86rem', fontWeight: 600 }}>Two-Way Reconciliation Health</div>
                 <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>
                   {dataMode === 'DEMO'
-                    ? '8 records verified · 2 exceptions flagged'
+                    ? '60 gateway records evaluated · 11 exceptions surfaced (81.7% match rate)'
                     : transactions.length > 0
                     ? `${transactions.length} verified general ledger entries reconciled`
                     : 'Awaiting ledger transaction entries'}
@@ -1046,6 +1057,32 @@ export default function DashboardHome() {
       />
 
       <style jsx>{`
+        .cmd-kpi-grid {
+          display: grid;
+          grid-template-columns: repeat(5, minmax(0, 1fr));
+          gap: 14px;
+        }
+        @media (max-width: 1200px) {
+          .cmd-kpi-grid {
+            grid-template-columns: repeat(3, minmax(0, 1fr)) !important;
+          }
+        }
+        @media (max-width: 768px) {
+          .cmd-kpi-grid {
+            grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+          }
+        }
+        @media (max-width: 480px) {
+          .cmd-kpi-grid {
+            grid-template-columns: 1fr !important;
+          }
+        }
+        @media (max-width: 1024px) {
+          .cmd-hero-grid {
+            grid-template-columns: 1fr !important;
+            gap: 20px !important;
+          }
+        }
         @media (max-width: 900px) {
           .cmd-flow-grid {
             grid-template-columns: 1fr !important;

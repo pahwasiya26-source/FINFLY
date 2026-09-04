@@ -8,9 +8,9 @@ export async function middleware(request: NextRequest) {
   const isPublicPath =
     pathname.startsWith('/_next') ||
     pathname.startsWith('/favicon.ico') ||
-    pathname === '/login' ||
-    pathname === '/forgot-password' ||
-    pathname === '/reset-password' ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
     pathname.startsWith('/auth/callback') ||
     pathname.startsWith('/privacy') ||
     pathname.startsWith('/api/public');

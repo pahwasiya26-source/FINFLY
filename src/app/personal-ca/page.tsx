@@ -123,7 +123,7 @@ export default function PersonalCaPage() {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: '8px', background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '12px', padding: '8px 14px' }}>
           <Shield size={16} color="var(--accent-primary)" />
-          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Zero-Hallucination Math</span>
+          <span style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', fontWeight: 600 }}>Deterministic Math</span>
         </div>
       </div>
 

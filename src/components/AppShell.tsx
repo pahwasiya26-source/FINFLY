@@ -6,16 +6,16 @@ import { MainNavigation } from './MainNavigation';
 import { ModeToggle } from './ModeToggle';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '../lib/auth/AuthContext';
-import { Menu, X, Shield, Lock, Bell } from 'lucide-react';
+import { Menu, X, Shield, Lock } from 'lucide-react';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { signOut } = useAuth();
   const isAuthPage =
-    pathname === '/login' ||
-    pathname === '/forgot-password' ||
-    pathname === '/reset-password' ||
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/forgot-password') ||
+    pathname.startsWith('/reset-password') ||
     pathname.startsWith('/auth/');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
 
@@ -118,6 +118,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           display: block;
           flex-shrink: 0;
           width: 272px;
+          z-index: 70;
         }
 
         .mobile-drawer-backdrop {
@@ -125,7 +126,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           inset: 0;
           background: var(--bg-overlay);
           backdrop-filter: blur(8px);
-          z-index: 90;
+          -webkit-backdrop-filter: blur(8px);
+          z-index: 95;
         }
 
         .mobile-drawer-content {
@@ -160,7 +162,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           padding: 0 28px;
           position: sticky;
           top: 0;
-          z-index: 30;
+          z-index: 60;
           width: 100%;
           gap: 12px;
         }
@@ -282,6 +284,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           }
           .main-content-scroll {
             padding: 20px 18px;
+          }
+        }
+
+        @media (max-width: 768px) {
+          .top-header-bar {
+            padding: 0 14px;
+          }
+          .system-enclave-badge {
+            display: none !important;
           }
         }
 

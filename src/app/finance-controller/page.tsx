@@ -148,7 +148,7 @@ export default function FinanceControllerPage() {
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px', flexWrap: 'wrap' }}>
               <span className="pill-badge pill-emerald">Strict Read-Only Enclave</span>
-              <span className="pill-badge pill-indigo">Zero-Hallucination Engine</span>
+              <span className="pill-badge pill-indigo">Deterministic Finance Engine</span>
               <span className="pill-badge pill-neutral">Mode: {mode}</span>
               {dataMode === 'DEMO' && <span className="pill-badge pill-gold">Demo Telemetry Active</span>}
             </div>

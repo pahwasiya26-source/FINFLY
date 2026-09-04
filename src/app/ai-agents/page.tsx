@@ -14,7 +14,7 @@ export default function AiAgentsPage() {
       metrics={[
         { label: 'Active Agent Fleet', value: '4 Specialized Agents', change: 'All Nominal', positive: true },
         { label: 'Autonomous Actions / Day', value: '142 Verified', change: '100% Policy Bound', positive: true },
-        { label: 'Deterministic Guardrails', value: 'Strict Enclave', change: 'Zero Hallucination' },
+        { label: 'Deterministic Guardrails', value: 'Strict Enclave', change: 'Deterministic Grounding' },
         { label: 'Human-in-the-Loop Threshold', value: '> ₹50,000', change: 'Approval Required' },
       ]}
       features={[

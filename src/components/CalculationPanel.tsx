@@ -1,7 +1,7 @@
 'use client';
 
-import { useState } from 'react';
-import { Info, X } from 'lucide-react';
+import React, { useState } from 'react';
+import { Info, ChevronDown, ChevronUp, CheckCircle2 } from 'lucide-react';
 
 interface CalculationPanelProps {
   title: string;
@@ -14,61 +14,126 @@ export function CalculationPanel({ title, formula, inputs, result }: Calculation
   const [isOpen, setIsOpen] = useState(false);
 
   return (
-    <div style={{ position: 'relative', display: 'inline-block' }}>
-      <button 
-        onClick={() => setIsOpen(!isOpen)}
-        style={{
-          background: 'transparent',
-          border: 'none',
-          boxShadow: 'none',
-          color: 'var(--text-secondary)',
-          padding: '4px',
-          display: 'flex',
-          alignItems: 'center',
-          gap: '4px',
-          fontSize: '0.75rem',
-          cursor: 'pointer'
-        }}
-      >
-        <Info size={14} />
-        How was this calculated?
-      </button>
+    <div style={{ width: '100%' }}>
+      {/* Proof Trigger Button */}
+      <div style={{ display: 'flex', justifyContent: 'flex-end', alignItems: 'center' }}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen(!isOpen);
+          }}
+          aria-expanded={isOpen}
+          title="View deterministic mathematical formula & inputs"
+          aria-label={`View mathematical formula for ${title}`}
+          style={{
+            background: isOpen ? 'var(--accent-primary-subtle)' : 'var(--bg-surface-elevated)',
+            border: '1px solid',
+            borderColor: isOpen ? 'var(--accent-primary)' : 'var(--border-subtle)',
+            borderRadius: '6px',
+            color: isOpen ? 'var(--accent-primary)' : 'var(--text-tertiary)',
+            padding: '2px 8px',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '4px',
+            fontSize: '0.70rem',
+            fontWeight: 600,
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+            whiteSpace: 'nowrap',
+          }}
+          className="calc-proof-trigger"
+        >
+          <Info size={12} />
+          <span>Proof</span>
+          {isOpen ? <ChevronUp size={11} /> : <ChevronDown size={11} />}
+        </button>
+      </div>
 
+      {/* Inline Expandable Proof Breakdown Section */}
       {isOpen && (
-        <div style={{
-          position: 'absolute',
-          top: '100%',
-          left: 0,
-          zIndex: 50,
-          background: 'var(--bg-surface)',
-          backdropFilter: 'var(--glass-blur)',
-          border: '1px solid rgba(255,255,255,0.1)',
-          borderRadius: '12px',
-          padding: '16px',
-          width: '280px',
-          marginTop: '8px',
-          boxShadow: '0 10px 40px rgba(0,0,0,0.5)'
-        }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '12px' }}>
-            <h4 style={{ margin: 0, fontSize: '0.9rem' }}>{title}</h4>
-            <X size={16} style={{ cursor: 'pointer', color: 'var(--text-secondary)' }} onClick={() => setIsOpen(false)} />
+        <div
+          role="region"
+          aria-label={`${title} Proof Breakdown`}
+          style={{
+            marginTop: '10px',
+            background: 'var(--bg-surface-subtle)',
+            border: '1px solid var(--border-color)',
+            borderRadius: '10px',
+            padding: '12px 14px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: '8px',
+            animation: 'fadeIn 0.15s ease-out',
+          }}
+        >
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+            <span
+              style={{
+                fontSize: '0.72rem',
+                fontWeight: 700,
+                color: 'var(--text-primary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.04em',
+              }}
+            >
+              Formula Proof
+            </span>
+            <span
+              style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '4px',
+                fontSize: '0.66rem',
+                color: 'var(--accent-primary)',
+                fontWeight: 600,
+              }}
+            >
+              <CheckCircle2 size={11} />
+              <span>Grounded</span>
+            </span>
           </div>
-          
-          <div style={{ background: 'rgba(0,0,0,0.3)', padding: '8px', borderRadius: '6px', marginBottom: '12px', fontSize: '0.8rem', fontFamily: 'monospace' }}>
+
+          <div
+            style={{
+              background: 'var(--bg-surface-elevated)',
+              border: '1px solid var(--border-subtle)',
+              padding: '6px 8px',
+              borderRadius: '6px',
+              fontSize: '0.70rem',
+              fontFamily: 'var(--font-mono, monospace)',
+              color: 'var(--accent-primary)',
+              wordBreak: 'break-word',
+            }}
+          >
             {formula}
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '0.85rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '5px', fontSize: '0.74rem' }}>
             {inputs.map((input, idx) => (
-              <div key={idx} style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{input.label}</span>
-                <span>{input.value}</span>
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  color: 'var(--text-secondary)',
+                }}
+              >
+                <span>{input.label}</span>
+                <span style={{ fontWeight: 600, color: 'var(--text-primary)' }}>{input.value}</span>
               </div>
             ))}
-            <div style={{ height: '1px', background: 'rgba(255,255,255,0.1)', margin: '4px 0' }} />
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-              <span>Result</span>
-              <span className="text-accent">{result}</span>
+            <div style={{ height: '1px', background: 'var(--border-subtle)', margin: '2px 0' }} />
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                fontWeight: 700,
+                fontSize: '0.76rem',
+              }}
+            >
+              <span style={{ color: 'var(--text-primary)' }}>Deterministic Result</span>
+              <span style={{ color: 'var(--accent-primary)' }}>{result}</span>
             </div>
           </div>
         </div>

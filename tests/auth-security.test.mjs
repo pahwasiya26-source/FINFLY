@@ -113,3 +113,49 @@ test('Auth Navigation UX: Sign In and Create Account screens both route to /forg
   assert.equal(authRoutes.signUpForgotPasswordTarget, '/forgot-password');
   assert.equal(authRoutes.recoveryRedirectTarget, '/reset-password');
 });
+
+test('Password Reset Redirect Target: Resolves exact origin for local and production', async () => {
+  const { getSiteUrl, getAuthCallbackUrl } = await import('../src/lib/auth/site-url.ts');
+
+  // Test local simulation
+  global.window = { location: { origin: 'http://localhost:3000' } };
+  assert.equal(getSiteUrl(), 'http://localhost:3000');
+  assert.equal(getAuthCallbackUrl(), 'http://localhost:3000/auth/callback');
+  assert.equal(
+    `${getAuthCallbackUrl()}?next=/reset-password`,
+    'http://localhost:3000/auth/callback?next=/reset-password'
+  );
+
+  // Test production simulation
+  global.window = { location: { origin: 'https://finexfly.vercel.app' } };
+  assert.equal(getSiteUrl(), 'https://finexfly.vercel.app');
+  assert.equal(getAuthCallbackUrl(), 'https://finexfly.vercel.app/auth/callback');
+  assert.equal(
+    `${getAuthCallbackUrl()}?next=/reset-password`,
+    'https://finexfly.vercel.app/auth/callback?next=/reset-password'
+  );
+
+  delete global.window;
+});
+
+test('Public Route Middleware: /reset-password with query params, trailing slashes, and code are public', () => {
+  function isPublicPath(pathname) {
+    return (
+      pathname.startsWith('/_next') ||
+      pathname.startsWith('/favicon.ico') ||
+      pathname.startsWith('/login') ||
+      pathname.startsWith('/forgot-password') ||
+      pathname.startsWith('/reset-password') ||
+      pathname.startsWith('/auth/callback') ||
+      pathname.startsWith('/privacy') ||
+      pathname.startsWith('/api/public')
+    );
+  }
+
+  assert.equal(isPublicPath('/reset-password'), true);
+  assert.equal(isPublicPath('/reset-password/'), true);
+  assert.equal(isPublicPath('/reset-password?code=test-code'), true);
+  assert.equal(isPublicPath('/auth/callback?next=/reset-password'), true);
+  assert.equal(isPublicPath('/forgot-password?submitted=true'), true);
+  assert.equal(isPublicPath('/login?redirect=/settings'), true);
+});

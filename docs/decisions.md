@@ -5,7 +5,7 @@
 - **Status**: Accepted
 - **Context**: LLMs generate text probabilistically and frequently make arithmetic errors (hallucinations) when performing multi-step financial math, compounding interest, or tax slab calculations.
 - **Decision**: The LLM is strictly used as an intent parser, planner, and verbalizer. All calculations are executed by pure TypeScript/SQL engines (`DigitalTwinEngine`, `finance-tools.ts`).
-- **Consequences**: Zero arithmetic hallucination. Every number presented in the UI or AI chat is backed by deterministic code and auditable proofs.
+- **Consequences**: Deterministic mathematical grounding. Every number presented in the UI or AI chat is backed by deterministic code and auditable proofs.
 
 ---
 

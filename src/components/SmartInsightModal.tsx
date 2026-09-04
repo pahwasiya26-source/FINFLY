@@ -25,6 +25,21 @@ interface SmartInsightModalProps {
 }
 
 export function SmartInsightModal({ insight, onClose }: SmartInsightModalProps) {
+  React.useEffect(() => {
+    if (!insight) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        onClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [insight, onClose]);
+
   if (!insight) return null;
 
   return (

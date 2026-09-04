@@ -53,6 +53,21 @@ export function AddAccountModal({
     }
   }, [open, defaultAccountType, defaultEntity]);
 
+  React.useEffect(() => {
+    if (!open) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        handleClose();
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [open]);
+
   const handleClose = () => {
     setName('');
     setInstitution('');
@@ -142,6 +157,9 @@ export function AddAccountModal({
       }}
     >
       <div
+        role="dialog"
+        aria-modal="true"
+        aria-label="Add Financial Account"
         style={{
           background: 'var(--bg-surface-elevated)',
           border: '1px solid var(--border-strong)',

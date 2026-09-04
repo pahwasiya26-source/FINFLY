@@ -620,7 +620,7 @@ export default function LoginPage() {
           <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
             <div style={{ color: 'var(--accent-primary)', marginBottom: '4px' }}><Shield size={16} /></div>
             <div style={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--text-primary)' }}>Deterministic</div>
-            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Zero-Hallucination Math</div>
+            <div style={{ fontSize: '0.68rem', color: 'var(--text-tertiary)' }}>Deterministic Math</div>
           </div>
           <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '12px' }}>
             <div style={{ color: 'var(--indigo-accent)', marginBottom: '4px' }}><Cpu size={16} /></div>

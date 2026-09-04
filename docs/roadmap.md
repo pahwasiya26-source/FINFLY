@@ -22,7 +22,7 @@
 - [x] **Milestone 5: AI Finance Controller (`/finance-controller` & `/ai-cfo`)**
   - Natural-language financial query processor.
   - Decoupled deterministic tool registry (`finance-tools.ts`).
-  - Zero-hallucination grounding validator & append-only Decision Trace logs.
+  - Deterministic grounding validator & append-only Decision Trace logs.
   - Staged action proposals requiring explicit human authorization.
 - [x] **Milestone 6: Backend Foundation & Multi-Tenant Security**
   - Supabase client & server enclave architecture (`@supabase/supabase-js`).

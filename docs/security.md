@@ -4,7 +4,7 @@
 
 FINEXFLY is designed to handle sensitive personal and enterprise financial data. Security is not an afterthought; it is built into the architecture at the protocol level:
 
-1. **Zero-Hallucination / Mathematical Grounding**: Financial figures are never generated probabilistically by AI. All numbers are computed deterministically.
+1. **Deterministic Mathematical Grounding**: Financial figures are never generated probabilistically by AI. All numbers are computed deterministically.
 2. **Strict Multi-Tenant Row Level Security (RLS)**: PostgreSQL enforces complete isolation at the database layer. No user can access another user's personal accounts or an organization they do not belong to.
 3. **No Service-Role Key in Browser**: The `SUPABASE_SERVICE_ROLE_KEY` is strictly confined to server-side enclaves with runtime environment assertions.
 4. **Human-in-the-Loop Safeguards**: The AI Finance Controller is read-only. It cannot mutate ledgers, trigger payouts, or apply budget changes without explicit user authorization.

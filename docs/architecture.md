@@ -21,7 +21,7 @@ Large Language Models (LLMs) are statistical text generators, not arithmetic eng
 │                   AI Finance Controller & Orchestrator                 │
 │  - Intent Recognition (Query / Explain / Audit / Simulate / Tax)       │
 │  - Deterministic Tool Invocations (Strict Read-Only)                   │
-│  - Zero-Hallucination Grounding Validator                              │
+│  - Deterministic Grounding Validator                                  │
 │  - Immutable Append-Only Decision Trace Logger                         │
 │  - Human-in-the-Loop Staged Proposals (No autonomous state mutation)  │
 └───────────────────────────────────┬────────────────────────────────────┘
@@ -62,7 +62,7 @@ Large Language Models (LLMs) are statistical text generators, not arithmetic eng
 
 ### B. AI Finance Controller (`FinanceControllerOrchestrator`)
 - **Location**: `src/lib/finance-controller-orchestrator.ts` & `src/lib/finance-tools.ts`
-- **Purpose**: Natural-language query interface with cryptographic verification and zero hallucination.
+- **Purpose**: Natural-language query interface with cryptographic verification and deterministic mathematical grounding.
 - **Auditability**: Every query produces an immutable `DecisionTraceEntry` with trace ID, timestamp, intent classification, executed tool list, inputs, raw outputs, and formula bindings.
 - **Read-Only Safety**: Any suggested action (e.g. loading a scenario into Digital Twin or approving a reconciliation match) is returned as a `stagedAction` requiring explicit human button authorization.
 
@@ -119,7 +119,7 @@ FINFLY/
 │   │   ├── supabase/          # Client & Server Supabase abstractions
 │   │   ├── digital-twin-engine.ts # Deterministic simulation class
 │   │   ├── finance-tools.ts   # Deterministic compute tools
-│   │   ├── finance-controller-orchestrator.ts # Zero-hallucination agent
+│   │   ├── finance-controller-orchestrator.ts # Deterministic agent engine
 │   │   └── mock-data.ts       # Ground truth personal & business ledgers
 │   ├── middleware.ts          # Route protection & session validation
 │   └── store/                 # Zustand Global State

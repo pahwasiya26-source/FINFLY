@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useId, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import {
   Sparkles,
   Lock,
@@ -23,6 +23,11 @@ import { getSupabaseBrowserClient, isSupabaseConfigured } from '../../lib/supaba
 
 function ResetPasswordContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const urlError = searchParams.get('error');
+  const urlMessage = searchParams.get('message');
+  const code = searchParams.get('code');
+
   const { updatePassword, user, isLoading: authLoading } = useAuth();
 
   const [newPassword, setNewPassword] = useState('');
@@ -42,29 +47,61 @@ function ResetPasswordContent() {
     const supabase = getSupabaseBrowserClient();
     const configured = isSupabaseConfigured();
 
+    if (urlMessage || urlError) {
+      setErrorMessage(urlMessage || 'The password reset link is invalid or has expired.');
+    }
+
     if (!configured || !supabase) {
       // In local dev demo mode, recovery session is simulated as active
       setHasRecoverySession(true);
       return;
     }
 
-    // Check existing session or listen to auth state changes (e.g. PASSWORD_RECOVERY event)
+    // 1. Detect if recovery tokens exist in URL hash fragment
+    const hasHashRecovery =
+      typeof window !== 'undefined' &&
+      (window.location.hash.includes('access_token') ||
+       window.location.hash.includes('type=recovery'));
+
+    // 2. If code parameter exists in search params and session is not yet set, attempt client exchange
+    if (code) {
+      supabase.auth.exchangeCodeForSession(code).then(({ data, error }) => {
+        if (data?.session) {
+          setHasRecoverySession(true);
+        } else if (error) {
+          console.warn('[FINEXFLY Reset Password] Client code exchange notice:', error.message);
+        }
+      });
+    }
+
+    // 3. Query current session
     supabase.auth.getSession().then(({ data: { session } }) => {
-      setHasRecoverySession(Boolean(session));
+      if (session) {
+        setHasRecoverySession(true);
+      } else if (!hasHashRecovery && !code) {
+        // Only mark missing if no hash or query token is in flight
+        setHasRecoverySession(false);
+      }
     });
 
+    // 4. Subscribe to auth state updates (e.g. detectSessionInUrl parsing hash fragment)
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === 'PASSWORD_RECOVERY' || session) {
+      if (
+        event === 'PASSWORD_RECOVERY' ||
+        (session && (event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'INITIAL_SESSION'))
+      ) {
         setHasRecoverySession(true);
+        setErrorMessage(null);
       }
     });
 
     return () => {
       subscription.unsubscribe();
     };
-  }, []);
+  }, [code, urlError, urlMessage]);
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -202,7 +239,7 @@ function ResetPasswordContent() {
             <div>
               <div style={{ fontWeight: 700, marginBottom: '4px' }}>Invalid or Expired Reset Link</div>
               <p style={{ margin: 0, lineHeight: 1.4 }}>
-                Your password reset session has expired or is invalid. Please request a new password reset link.
+                {errorMessage || 'Your password reset session has expired or is invalid. Please request a new password reset link.'}
               </p>
             </div>
           </div>

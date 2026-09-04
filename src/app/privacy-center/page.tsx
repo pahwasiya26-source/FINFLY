@@ -8,7 +8,7 @@ export default function PrivacyCenterPage() {
   return (
     <ModuleLandingScreen
       title="Privacy Center & Security Enclave"
-      subtitle="Zero-knowledge architecture, bank-grade encryption, local execution guarantees, and audit trail controls."
+      subtitle="Supabase authentication, Row Level Security (RLS), server-only service-role access, and personal/business tenant isolation."
       badge="Security & Compliance"
       icon={Lock}
       metrics={[

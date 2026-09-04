@@ -13,7 +13,7 @@ export default function AiCfoPage() {
     <ModuleLandingScreen
       title="AI CFO & Strategic Intelligence"
       subtitle="Deterministic executive reasoning, liquidity forecasting, and non-hallucinatory capital advice."
-      badge="Zero-Hallucination CFO"
+      badge="Deterministic CFO"
       icon={Bot}
       metrics={[
         { label: 'Strategic Confidence', value: '99.4%', change: 'Deterministic Grounding', positive: true },
@@ -34,7 +34,7 @@ export default function AiCfoPage() {
         },
         {
           title: 'Executive Financial Briefing Generator',
-          description: 'Generates automated monthly board and stakeholder summaries with zero hallucination guarantee.',
+          description: 'Generates automated monthly board and stakeholder summaries with deterministic mathematical grounding.',
           status: 'Ready for Phase 2',
         },
       ]}
