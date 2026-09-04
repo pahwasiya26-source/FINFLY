@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FINEXFLY — Interactive System Architecture Explorer</title>
+  <link rel="icon" href="/favicon.ico" />
+  <style>
+    :root {
+      --bg-base: #030712;
+      --bg-surface: #0b1329;
+      --bg-surface-elevated: #0f172a;
+      --border-subtle: #1e293b;
+      --border-strong: #334155;
+      --accent-emerald: #10b981;
+      --accent-cyan: #06b6d4;
+      --accent-purple: #8b5cf6;
+      --accent-amber: #f59e0b;
+      --text-primary: #f8fafc;
+      --text-secondary: #94a3b8;
+      --text-muted: #64748b;
+      --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg-base);
+      color: var(--text-primary);
+      font-family: var(--font-sans);
+      overflow: hidden;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      user-select: none;
+    }
+
+    /* Top Command Header */
+    header {
+      height: 60px;
+      background: rgba(11, 19, 41, 0.85);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border-subtle);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 20px;
+      z-index: 50;
+      flex-shrink: 0;
+    }
+
+    .brand-section {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-badge {
+      width: 28px;
+      height: 28px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--accent-emerald) 0%, #047857 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 14px;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(16, 185, 129, 0.4);
+    }
+
+    .brand-title {
+      font-size: 14px;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+      color: var(--text-primary);
+    }
+
+    .brand-subtitle {
+      font-size: 11px;
+      color: var(--text-muted);
+      font-family: var(--font-mono);
+    }
+
+    /* Layer Filter Pills */
+    .filter-group {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      overflow-x: auto;
+      max-width: 620px;
+      padding: 4px;
+    }
+
+    .filter-btn {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-secondary);
+      font-size: 11px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 5px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      white-space: nowrap;
+    }
+
+    .filter-btn:hover {
+      color: var(--text-primary);
+      border-color: var(--border-strong);
+    }
+
+    .filter-btn.active {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    /* Action Tools */
+    .tool-group {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .tool-btn {
+      background: var(--bg-surface-elevated);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      font-size: 12px;
+      font-family: var(--font-mono);
+      font-weight: 600;
+      padding: 6px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+
+    .tool-btn:hover {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 10px rgba(6, 182, 212, 0.2);
+    }
+
+    .tool-btn.primary {
+      background: rgba(16, 185, 129, 0.12);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    .tool-btn.primary:hover {
+      background: rgba(16, 185, 129, 0.25);
+    }
+
+    /* Canvas Viewport */
+    #viewport-container {
+      flex: 1;
+      width: 100%;
+      height: calc(100vh - 60px);
+      position: relative;
+      overflow: hidden;
+      cursor: grab;
+      background: radial-gradient(circle at 50% 50%, #080e1e 0%, #030712 100%);
+    }
+
+    #viewport-container:active {
+      cursor: grabbing;
+    }
+
+    #diagram-stage {
+      position: absolute;
+      top: 0;
+      left: 0;
+      transform-origin: 0 0;
+      will-change: transform;
+      transition: transform 0.05s ease-out;
+    }
+
+    /* Floating Zoom HUD */
+    .zoom-hud {
+      position: absolute;
+      bottom: 24px;
+      right: 24px;
+      background: rgba(15, 23, 42, 0.85);
+      backdrop-filter: blur(12px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 10px;
+      padding: 6px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+      z-index: 40;
+    }
+
+    .zoom-btn {
+      width: 32px;
+      height: 32px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border-subtle);
+      color: var(--text-primary);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: all 0.15s ease;
+    }
+
+    .zoom-btn:hover {
+      background: rgba(16, 185, 129, 0.15);
+      border-color: var(--accent-emerald);
+      color: var(--accent-emerald);
+    }
+
+    .zoom-level-tag {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      text-align: center;
+      color: var(--text-muted);
+      padding: 2px 0;
+    }
+
+    /* Floating Info Drawer / Inspector */
+    #inspector-drawer {
+      position: absolute;
+      bottom: 24px;
+      left: 24px;
+      width: 380px;
+      max-width: calc(100vw - 48px);
+      background: rgba(15, 23, 42, 0.92);
+      backdrop-filter: blur(16px);
+      -webkit-backdrop-filter: blur(16px);
+      border: 1px solid var(--border-strong);
+      border-radius: 12px;
+      padding: 18px;
+      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6);
+      z-index: 40;
+      display: none;
+      animation: slideIn 0.2s ease-out;
+    }
+
+    @keyframes slideIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .inspector-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+
+    .inspector-tag {
+      font-size: 9px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      color: var(--accent-emerald);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .inspector-close {
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    .inspector-close:hover {
+      color: var(--text-primary);
+    }
+
+    .inspector-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 6px;
+    }
+
+    .inspector-desc {
+      font-size: 12px;
+      color: var(--text-secondary);
+      line-height: 1.5;
+      margin-bottom: 12px;
+    }
+
+    .inspector-spec-box {
+      background: var(--bg-base);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 10px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: #38bdf8;
+      word-break: break-all;
+    }
+
+    /* Helper tip */
+    .nav-tip {
+      position: absolute;
+      top: 16px;
+      left: 20px;
+      background: rgba(15, 23, 42, 0.75);
+      backdrop-filter: blur(8px);
+      border: 1px solid var(--border-subtle);
+      border-radius: 6px;
+      padding: 6px 12px;
+      font-size: 11px;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+      pointer-events: none;
+      z-index: 30;
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Top Command Bar -->
+  <header>
+    <div class="brand-section">
+      <div class="brand-badge">⚡</div>
+      <div>
+        <div class="brand-title">FINEXFLY System Architecture</div>
+        <div class="brand-subtitle">Interactive Control Layer &amp; Data Pipeline</div>
+      </div>
+    </div>
+
+    <!-- Layer Filter Pills -->
+    <div class="filter-group">
+      <button class="filter-btn active" data-layer="all">All Layers</button>
+      <button class="filter-btn" data-layer="layer-data">01 Data</button>
+      <button class="filter-btn" data-layer="layer-control">02 Control</button>
+      <button class="filter-btn" data-layer="layer-intelligence">03 Intelligence</button>
+      <button class="filter-btn" data-layer="layer-engines">04 Engines</button>
+      <button class="filter-btn" data-layer="layer-controller">05 AI Controller</button>
+      <button class="filter-btn" data-layer="layer-twin">06 Digital Twin</button>
+      <button class="filter-btn" data-layer="layer-actions">07 Actions</button>
+    </div>
+
+    <!-- Right Controls -->
+    <div class="tool-group">
+      <button class="tool-btn" id="btn-reset" title="Reset Viewport">⟲ Reset</button>
+      <button class="tool-btn" id="btn-fullscreen" title="Toggle Fullscreen">⛶ Fullscreen</button>
+      <a href="/" class="tool-btn primary" title="Open FINEXFLY Dashboard">Dashboard →</a>
+    </div>
+  </header>
+
+  <!-- Interactive Pan / Zoom Canvas Viewport -->
+  <div id="viewport-container">
+    <div class="nav-tip">Drag to Pan · Scroll or use HUD to Zoom · Click components to inspect</div>
+
+    <div id="diagram-stage">
+      <!-- Embed SVG directly so it supports mouse hover and click interactions -->
+      <object id="svg-object" type="image/svg+xml" data="/finexfly-architecture.svg" width="1200" height="1060" style="display: block; pointer-events: auto;"></object>
+    </div>
+
+    <!-- Zoom HUD Controls -->
+    <div class="zoom-hud">
+      <button class="zoom-btn" id="btn-zoom-in" title="Zoom In">+</button>
+      <div class="zoom-level-tag" id="zoom-text">100%</div>
+      <button class="zoom-btn" id="btn-zoom-out" title="Zoom Out">−</button>
+      <button class="zoom-btn" id="btn-zoom-reset" title="Fit Screen">⤢</button>
+    </div>
+
+    <!-- Component Inspector Drawer -->
+    <div id="inspector-drawer">
+      <div class="inspector-header">
+        <span class="inspector-tag" id="drawer-tag">DETERMINISTIC COMPONENT</span>
+        <button class="inspector-close" id="drawer-close">&times;</button>
+      </div>
+      <div class="inspector-title" id="drawer-title">Component Name</div>
+      <div class="inspector-desc" id="drawer-desc">Description of architectural behavior and invariants.</div>
+      <div class="inspector-spec-box" id="drawer-spec">SPECIFICATION DETAILS</div>
+    </div>
+  </div>
+
+  <script>
+    (function () {
+      const container = document.getElementById('viewport-container');
+      const stage = document.getElementById('diagram-stage');
+      const svgObject = document.getElementById('svg-object');
+      const zoomText = document.getElementById('zoom-text');
+      const drawer = document.getElementById('inspector-drawer');
+      const drawerTitle = document.getElementById('drawer-title');
+      const drawerDesc = document.getElementById('drawer-desc');
+      const drawerSpec = document.getElementById('drawer-spec');
+      const drawerTag = document.getElementById('drawer-tag');
+      const drawerClose = document.getElementById('drawer-close');
+
+      let scale = 1;
+      let panX = 0;
+      let panY = 0;
+      let isDragging = false;
+      let startX = 0;
+      let startY = 0;
+
+      function updateTransform() {
+        stage.style.transform = `translate(${panX}px, ${panY}px) scale(${scale})`;
+        zoomText.textContent = `${Math.round(scale * 100)}%`;
+      }
+
+      function centerDiagram() {
+        const cw = container.clientWidth;
+        const ch = container.clientHeight;
+        const dw = 1200;
+        const dh = 1060;
+
+        // Fit whole diagram with padding
+        const scaleX = (cw - 60) / dw;
+        const scaleY = (ch - 40) / dh;
+        scale = Math.min(Math.max(Math.min(scaleX, scaleY), 0.5), 1.2);
+
+        panX = Math.round((cw - dw * scale) / 2);
+        panY = Math.round((ch - dh * scale) / 2);
+        updateTransform();
+      }
+
+      // Initial center on load
+      window.addEventListener('resize', centerDiagram);
+      window.addEventListener('DOMContentLoaded', () => {
+        setTimeout(centerDiagram, 100);
+      });
+
+      // Pan handling
+      container.addEventListener('mousedown', (e) => {
+        if (e.target.closest('.zoom-hud') || e.target.closest('#inspector-drawer')) return;
+        isDragging = true;
+        startX = e.clientX - panX;
+        startY = e.clientY - panY;
+      });
+
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        panX = e.clientX - startX;
+        panY = e.clientY - startY;
+        updateTransform();
+      });
+
+      window.addEventListener('mouseup', () => {
+        isDragging = false;
+      });
+
+      // Wheel Zoom
+      container.addEventListener('wheel', (e) => {
+        e.preventDefault();
+        const zoomFactor = e.deltaY < 0 ? 1.1 : 0.9;
+        const newScale = Math.min(Math.max(scale * zoomFactor, 0.4), 2.5);
+
+        // Zoom towards cursor
+        const rect = container.getBoundingClientRect();
+        const mouseX = e.clientX - rect.left;
+        const mouseY = e.clientY - rect.top;
+
+        panX = mouseX - (mouseX - panX) * (newScale / scale);
+        panY = mouseY - (mouseY - panY) * (newScale / scale);
+        scale = newScale;
+
+        updateTransform();
+      }, { passive: false });
+
+      // HUD buttons
+      document.getElementById('btn-zoom-in').addEventListener('click', () => {
+        scale = Math.min(scale * 1.2, 2.5);
+        updateTransform();
+      });
+
+      document.getElementById('btn-zoom-out').addEventListener('click', () => {
+        scale = Math.max(scale * 0.8, 0.4);
+        updateTransform();
+      });
+
+      document.getElementById('btn-zoom-reset').addEventListener('click', centerDiagram);
+      document.getElementById('btn-reset').addEventListener('click', centerDiagram);
+
+      // Fullscreen
+      document.getElementById('btn-fullscreen').addEventListener('click', () => {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(() => {});
+        } else {
+          document.exitFullscreen().catch(() => {});
+        }
+      });
+
+      // Layer Filter Controls
+      const filterButtons = document.querySelectorAll('.filter-btn');
+      filterButtons.forEach(btn => {
+        btn.addEventListener('click', () => {
+          filterButtons.forEach(b => b.classList.remove('active'));
+          btn.classList.add('active');
+
+          const layerId = btn.dataset.layer;
+          filterLayer(layerId);
+        });
+      });
+
+      function filterLayer(layerId) {
+        try {
+          const svgDoc = svgObject.contentDocument;
+          if (!svgDoc) return;
+
+          const layers = svgDoc.querySelectorAll('.layer-group');
+          layers.forEach(layer => {
+            if (layerId === 'all') {
+              layer.style.opacity = '1';
+              layer.style.filter = 'none';
+            } else if (layer.id === layerId) {
+              layer.style.opacity = '1';
+              layer.style.filter = 'drop-shadow(0 0 12px rgba(16, 185, 129, 0.5))';
+            } else {
+              layer.style.opacity = '0.22';
+              layer.style.filter = 'grayscale(0.6)';
+            }
+          });
+        } catch (e) {
+          console.warn('SVG DOM access error:', e);
+        }
+      }
+
+      // Drawer Close
+      drawerClose.addEventListener('click', () => {
+        drawer.style.display = 'none';
+      });
+
+      // Technical info catalog for interactive inspector
+      const COMPONENT_DETAILS = {
+        'layer-data': {
+          tag: 'LAYER 01 // TELEMETRY INGESTION',
+          title: 'Fragmented Financial Data Sources',
+          desc: 'Unifies siloed personal bank accounts, operating company ledgers, payment gateway settlement telemetry, and investment portfolios into a normalized schema without cross-tenant leakage.',
+          spec: 'Tables: accounts, transactions, organizations, obligations\nModes: REAL (Supabase RLS) | DEMO (Synthetic Benchmark) | EMPTY (₹0)'
+        },
+        'layer-control': {
+          tag: 'LAYER 02 // ACCESS ENCLAVE',
+          title: 'Supabase Authentication & Row Level Security',
+          desc: 'Supabase authentication with Row Level Security (RLS) and server-only service-role access. Personal/business tenant isolation ensures complete separation between personal finances and enterprise accounts.',
+          spec: 'Enclave: assertServerEnvironment()\nRLS Rule: user_id = auth.uid() OR organization_id IN user_orgs'
+        },
+        'layer-intelligence': {
+          tag: 'LAYER 03 // MULTI-DIMENSIONAL MATRIX',
+          title: 'Financial Intelligence Services',
+          desc: 'Personal/Business cash flow aggregation, internal transfer de-duplication, honest cost-basis investment allocation tracking, and deterministic reconciliation audit.',
+          spec: 'Transfer Rule: Internal account transfers omitted from operational income\nCost Basis: Explicitly labeled "Cost basis unavailable" when unrecorded'
+        },
+        'layer-engines': {
+          tag: 'LAYER 04 // DETERMINISTIC CORE',
+          title: 'Deterministic Finance Engines',
+          desc: 'Core arithmetic executed strictly in audited TypeScript modules outside the LLM. Provides deterministic financial calculations across all financial metrics.',
+          spec: 'Modules: getFinancialOverview, computeRunway, runReconciliationAudit,\nDigitalTwinEngine, calculateTaxProjection, detectAnomalies'
+        },
+        'layer-controller': {
+          tag: 'LAYER 05 // AI ORCHESTRATION',
+          title: 'AI Finance Controller & Decision Trace',
+          desc: 'Natural language interface that routes queries to deterministic tools. Synthesizes grounded AI explanations strictly referencing pre-calculated metrics with auditable Decision Traces.',
+          spec: 'Trace Fields: traceId, timestamp, intent, toolsUsed, status\nGrounding: STRICTLY_GROUNDED vs PROJECTION_ESTIMATE'
+        },
+        'layer-twin': {
+          tag: 'LAYER 06 // FORWARD SIMULATION',
+          title: 'Forward Digital Twin Sandbox',
+          desc: '12-month forward cash trajectory simulation under variable additions (revenue, OPEX) and multipliers while strictly preserving fundamental accounting identities.',
+          spec: 'Equation: Cash(n) = Cash(n-1) + (Revenue(n) - Expenses(n))\nVerified Proof: ₹4,50,000 + (12 × ₹85,000) = ₹14,70,000'
+        },
+        'layer-actions': {
+          tag: 'LAYER 07 // OPERATOR GATEWAY',
+          title: 'Human-Authorized Staged Actions',
+          desc: 'Proposed actions (scenario variable imports, reconciliation approvals) are staged in a queue. Never executed autonomously; requires explicit operator button confirmation.',
+          spec: 'Queue: stagedAction proposal payload\nExecution: Explicit human click required · Zero autonomous fund transfer'
+        }
+      };
+
+      // Connect click handlers once SVG contentDocument is accessible
+      svgObject.addEventListener('load', () => {
+        try {
+          const svgDoc = svgObject.contentDocument;
+          if (!svgDoc) return;
+
+          Object.keys(COMPONENT_DETAILS).forEach(id => {
+            const el = svgDoc.getElementById(id);
+            if (el) {
+              el.style.cursor = 'pointer';
+              el.addEventListener('click', (e) => {
+                e.stopPropagation();
+                const info = COMPONENT_DETAILS[id];
+                drawerTag.textContent = info.tag;
+                drawerTitle.textContent = info.title;
+                drawerDesc.textContent = info.desc;
+                drawerSpec.textContent = info.spec;
+                drawer.style.display = 'block';
+              });
+            }
+          });
+        } catch (e) {
+          console.warn('SVG click binding skipped:', e);
+        }
+      });
+    })();
+  </script>
+</body>
+</html>

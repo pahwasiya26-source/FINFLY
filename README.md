@@ -27,33 +27,18 @@
 
 > **"FINEXFLY turns financial data into verified answers, forward-looking scenarios, and human-controlled financial decisions."**
 
-```
-┌────────────────────────────────────────────────────────────────────────┐
-│                      FRAGMENTED FINANCIAL DATA                         │
-│     (Personal Accounts • Business Ledgers • Gateways • Investments)    │
-└───────────────────────────────────┬────────────────────────────────────┘
-                                    │
-                                    ▼
-┌────────────────────────────────────────────────────────────────────────┐
-│                        FINEXFLY CONTROL LAYER                          │
-│        (Unified Identity • Personal & Business Domain Isolation)        │
-├────────────────────────────────────────────────────────────────────────┤
-│  💼 Personal & Business Finance   │  📈 Investment Intelligence        │
-│  💸 Money Flow & Transfer Audit   │  ⚖️ Deterministic Reconciliation   │
-├────────────────────────────────────────────────────────────────────────┤
-│                      DETERMINISTIC FINANCE ENGINES                     │
-│   (Overview • Runway • Reconciliation • Digital Twin • Tax • Anomaly)  │
-├────────────────────────────────────────────────────────────────────────┤
-│                          AI FINANCE CONTROLLER                         │
-│              (Natural Intent Routing • Auditable Decision Trace)        │
-├────────────────────────────────────────────────────────────────────────┤
-│                         FORWARD DIGITAL TWIN                           │
-│                 (12-Month Deterministic Scenario Sandbox)               │
-├────────────────────────────────────────────────────────────────────────┤
-│                       HUMAN-CONTROLLED ACTIONS                         │
-│               (Staged Action Queue • Operator Authorization)           │
-└────────────────────────────────────────────────────────────────────────┘
-```
+[![FINEXFLY System Architecture & Data Flow Control Layer](public/finexfly-architecture.svg)](public/finexfly-architecture.svg)
+
+<p align="center">
+  <em>⚡ High-Resolution Vector Control Map · <a href="public/architecture.html">Launch Interactive Architecture Explorer →</a></em>
+</p>
+
+#### Architectural Flow & Control Legend
+- **`DATA`** → Source financial information ingested across siloed accounts, ledgers, gateways, and portfolios.
+- **`ENGINE`** → Deterministic computation executed strictly in audited TypeScript modules outside the LLM.
+- **`AI`** → Intent routing and grounded narrative explanation strictly referencing verified calculation outputs.
+- **`TRACE`** → Auditable reasoning record documenting `traceId`, timestamp, inputs, formulas, and grounding status.
+- **`ACTION`** → Proposed financial operations staged in queue; requires explicit human operator authorization.
 
 FINEXFLY is not merely a transaction dashboard, an investment tracker, a reconciliation script, or a generic AI chatbot. It brings these components together into an auditable financial control system.
 

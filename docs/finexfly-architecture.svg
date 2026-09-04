@@ -1,0 +1,516 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 1060" width="100%" height="100%" style="background:#030712; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;">
+  <defs>
+    <!-- Background Gradients -->
+    <radialGradient id="ambientGlow1" cx="20%" cy="15%" r="40%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ambientGlow2" cx="80%" cy="50%" r="45%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.14"/>
+      <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="ambientGlow3" cx="50%" cy="85%" r="40%">
+      <stop offset="0%" stop-color="#8b5cf6" stop-opacity="0.10"/>
+      <stop offset="100%" stop-color="#030712" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- Card Gradients -->
+    <linearGradient id="cardGradDark" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0f172a" stop-opacity="0.95"/>
+      <stop offset="100%" stop-color="#090d16" stop-opacity="0.98"/>
+    </linearGradient>
+    <linearGradient id="engineGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#064e3b" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#022c22" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="aiGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.9"/>
+    </linearGradient>
+    <linearGradient id="actionGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#451a03" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#0f172a" stop-opacity="0.9"/>
+    </linearGradient>
+
+    <!-- Border Gradients -->
+    <linearGradient id="borderEmerald" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10b981" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#047857" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="borderCyan" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#0e7490" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="borderPurple" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#a855f7" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#6b21a8" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="borderGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f59e0b" stop-opacity="0.8"/>
+      <stop offset="100%" stop-color="#b45309" stop-opacity="0.2"/>
+    </linearGradient>
+    <linearGradient id="busLineGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#06b6d4"/>
+      <stop offset="50%" stop-color="#10b981"/>
+      <stop offset="100%" stop-color="#8b5cf6"/>
+    </linearGradient>
+
+    <!-- Filters -->
+    <filter id="glowEmerald" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+    <filter id="glowCyan" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="3" result="blur" />
+      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+    </filter>
+
+    <!-- Markers -->
+    <marker id="arrowEmerald" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M1,1 L7,4 L1,7 Z" fill="#10b981"/>
+    </marker>
+    <marker id="arrowCyan" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M1,1 L7,4 L1,7 Z" fill="#06b6d4"/>
+    </marker>
+    <marker id="arrowPurple" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M1,1 L7,4 L1,7 Z" fill="#8b5cf6"/>
+    </marker>
+    <marker id="arrowGold" markerWidth="8" markerHeight="8" refX="4" refY="4" orient="auto">
+      <path d="M1,1 L7,4 L1,7 Z" fill="#f59e0b"/>
+    </marker>
+
+    <!-- Subtle Technical Grid Pattern -->
+    <pattern id="techGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+      <path d="M 40 0 L 0 0 0 40" fill="none" stroke="#1e293b" stroke-width="0.5" stroke-opacity="0.4"/>
+      <circle cx="0" cy="0" r="1" fill="#334155" fill-opacity="0.6"/>
+    </pattern>
+
+    <style>
+      .layer-group { transition: all 0.3s ease; }
+      .layer-group:hover { filter: brightness(1.12); }
+      .card-box { transition: all 0.2s ease; }
+      .card-box:hover { stroke-width: 1.5px; }
+      .flow-path { animation: dashFlow 2s linear infinite; }
+      @keyframes dashFlow {
+        from { stroke-dashoffset: 20; }
+        to { stroke-dashoffset: 0; }
+      }
+      .pulse-dot { animation: pulseAnim 2s infinite ease-in-out; }
+      @keyframes pulseAnim {
+        0%, 100% { opacity: 0.4; r: 3; }
+        50% { opacity: 1; r: 4.5; }
+      }
+      .mono-text { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
+    </style>
+  </defs>
+
+  <!-- Ambient Light Backdrops -->
+  <rect width="1200" height="1060" fill="#030712"/>
+  <rect width="1200" height="1060" fill="url(#ambientGlow1)"/>
+  <rect width="1200" height="1060" fill="url(#ambientGlow2)"/>
+  <rect width="1200" height="1060" fill="url(#ambientGlow3)"/>
+  <rect width="1200" height="1060" fill="url(#techGrid)"/>
+
+  <!-- ========================================================================= -->
+  <!-- TOP HEADER / CONTROL SYSTEM TITLE                                         -->
+  <!-- ========================================================================= -->
+  <g transform="translate(60, 30)">
+    <!-- Circuit Header Accent -->
+    <path d="M 0,20 L 140,20 L 155,35 L 925,35 L 940,20 L 1080,20" fill="none" stroke="#1e293b" stroke-width="1.2"/>
+    <circle cx="140" cy="20" r="2.5" fill="#10b981"/>
+    <circle cx="940" cy="20" r="2.5" fill="#06b6d4"/>
+
+    <!-- Status Badges -->
+    <rect x="0" y="0" width="130" height="20" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="0.8"/>
+    <circle cx="10" cy="10" r="3" fill="#10b981" class="pulse-dot"/>
+    <text x="20" y="14" fill="#10b981" font-size="9" font-weight="700" class="mono-text">SYSTEM ACTIVE</text>
+
+    <rect x="950" y="0" width="130" height="20" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.8"/>
+    <text x="962" y="14" fill="#38bdf8" font-size="9" font-weight="700" class="mono-text">DECOUPLED CORE</text>
+
+    <!-- Main Title -->
+    <text x="540" y="16" text-anchor="middle" fill="#f8fafc" font-size="16" font-weight="800" letter-spacing="1.5">FINEXFLY ARCHITECTURE &amp; DATA FLOW CONTROL LAYER</text>
+    <text x="540" y="32" text-anchor="middle" fill="#64748b" font-size="10.5" class="mono-text">DETERMINISTIC FINANCIAL CALCULATIONS + GROUNDED AI EXPLANATIONS</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- LAYER 1: FRAGMENTED FINANCIAL DATA SOURCES                                -->
+  <!-- ========================================================================= -->
+  <g class="layer-group" id="layer-data" transform="translate(60, 85)">
+    <!-- Layer Frame Outer -->
+    <rect x="0" y="0" width="1080" height="92" rx="8" fill="#0b1120" fill-opacity="0.85" stroke="#1e293b" stroke-width="1"/>
+    
+    <!-- Layer Label Tab -->
+    <rect x="16" y="-10" width="280" height="20" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.8"/>
+    <text x="26" y="4" fill="#38bdf8" font-size="9.5" font-weight="700" class="mono-text">01 // FRAGMENTED FINANCIAL DATA</text>
+    <text x="1064" y="14" text-anchor="end" fill="#64748b" font-size="8.5" class="mono-text">RAW SILOED TELEMETRY</text>
+
+    <!-- 4 Source Cards -->
+    <!-- Card 1: Personal Accounts -->
+    <g transform="translate(16, 18)">
+      <rect width="246" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8" class="card-box"/>
+      <rect x="0" y="0" width="3" height="60" rx="1.5" fill="#38bdf8"/>
+      <text x="14" y="20" fill="#f1f5f9" font-size="11" font-weight="700">Personal Bank Accounts</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Liquid checking, savings &amp; deposits</text>
+      <text x="14" y="48" fill="#64748b" font-size="8.5" class="mono-text">State: accounts table (REAL/EMPTY)</text>
+      <circle cx="232" cy="18" r="3" fill="#38bdf8"/>
+    </g>
+
+    <!-- Card 2: Business Ledgers -->
+    <g transform="translate(282, 18)">
+      <rect width="246" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8" class="card-box"/>
+      <rect x="0" y="0" width="3" height="60" rx="1.5" fill="#60a5fa"/>
+      <text x="14" y="20" fill="#f1f5f9" font-size="11" font-weight="700">Business Operating Ledgers</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Invoices, vendor payables &amp; AP/AR</text>
+      <text x="14" y="48" fill="#64748b" font-size="8.5" class="mono-text">State: organizations &amp; obligations</text>
+      <circle cx="232" cy="18" r="3" fill="#60a5fa"/>
+    </g>
+
+    <!-- Card 3: Payment Gateways -->
+    <g transform="translate(548, 18)">
+      <rect width="246" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8" class="card-box"/>
+      <rect x="0" y="0" width="3" height="60" rx="1.5" fill="#a78bfa"/>
+      <text x="14" y="20" fill="#f1f5f9" font-size="11" font-weight="700">Payment Gateway Telemetry</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Razorpay-style webhook captures &amp; fees</text>
+      <text x="14" y="48" fill="#64748b" font-size="8.5" class="mono-text">Synthetic benchmark dataset schema</text>
+      <circle cx="232" cy="18" r="3" fill="#a78bfa"/>
+    </g>
+
+    <!-- Card 4: Investments -->
+    <g transform="translate(814, 18)">
+      <rect width="250" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8" class="card-box"/>
+      <rect x="0" y="0" width="3" height="60" rx="1.5" fill="#34d399"/>
+      <text x="14" y="20" fill="#f1f5f9" font-size="11" font-weight="700">Investment Portfolios</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Equities, mutual funds, gold, fixed deposits</text>
+      <text x="14" y="48" fill="#64748b" font-size="8.5" class="mono-text">Disclosure: honest cost basis tracking</text>
+      <circle cx="236" cy="18" r="3" fill="#34d399"/>
+    </g>
+  </g>
+
+  <!-- Flow Connector 1 -> 2 -->
+  <g transform="translate(60, 177)">
+    <line x1="139" y1="0" x2="139" y2="28" stroke="#38bdf8" stroke-width="1.5" stroke-dasharray="4 2" class="flow-path"/>
+    <line x1="405" y1="0" x2="405" y2="28" stroke="#60a5fa" stroke-width="1.5" stroke-dasharray="4 2" class="flow-path"/>
+    <line x1="671" y1="0" x2="671" y2="28" stroke="#a78bfa" stroke-width="1.5" stroke-dasharray="4 2" class="flow-path"/>
+    <line x1="939" y1="0" x2="939" y2="28" stroke="#34d399" stroke-width="1.5" stroke-dasharray="4 2" class="flow-path"/>
+    <path d="M 139,28 L 540,28 L 939,28" stroke="#334155" stroke-width="1"/>
+    <line x1="540" y1="28" x2="540" y2="40" stroke="#10b981" stroke-width="2" marker-end="url(#arrowEmerald)"/>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- LAYER 2: FINEXFLY CONTROL LAYER                                           -->
+  <!-- ========================================================================= -->
+  <g class="layer-group" id="layer-control" transform="translate(60, 222)">
+    <rect x="0" y="0" width="1080" height="76" rx="8" fill="#0b1329" fill-opacity="0.9" stroke="url(#borderCyan)" stroke-width="1"/>
+    
+    <!-- Tab -->
+    <rect x="16" y="-10" width="260" height="20" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.8"/>
+    <text x="26" y="4" fill="#06b6d4" font-size="9.5" font-weight="700" class="mono-text">02 // FINEXFLY CONTROL LAYER</text>
+    <text x="1064" y="14" text-anchor="end" fill="#38bdf8" font-size="8.5" class="mono-text">IDENTITY &amp; DOMAIN ISOLATION</text>
+
+    <!-- 2 Sub-panels -->
+    <g transform="translate(16, 16)">
+      <rect width="516" height="48" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="0.8"/>
+      <text x="14" y="19" fill="#f8fafc" font-size="10.5" font-weight="700">Supabase Authentication + Row Level Security</text>
+      <text x="14" y="34" fill="#94a3b8" font-size="9">Scoped to user_id = auth.uid() · Server-only service-role access</text>
+      <circle cx="500" cy="24" r="3" fill="#10b981"/>
+    </g>
+
+    <g transform="translate(548, 16)">
+      <rect width="516" height="48" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="0.8"/>
+      <text x="14" y="19" fill="#f8fafc" font-size="10.5" font-weight="700">Personal/Business Tenant Isolation</text>
+      <text x="14" y="34" fill="#94a3b8" font-size="9">Strict tenant boundaries · Personal accounts isolated from enterprise organization ledgers</text>
+      <circle cx="500" cy="24" r="3" fill="#06b6d4"/>
+    </g>
+  </g>
+
+  <!-- Flow Connector 2 -> 3 -->
+  <g transform="translate(60, 298)">
+    <line x1="540" y1="0" x2="540" y2="28" stroke="#06b6d4" stroke-width="2" marker-end="url(#arrowCyan)" class="flow-path"/>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- LAYER 3: FINANCIAL INTELLIGENCE MATRIX                                     -->
+  <!-- ========================================================================= -->
+  <g class="layer-group" id="layer-intelligence" transform="translate(60, 330)">
+    <rect x="0" y="0" width="1080" height="92" rx="8" fill="#0b1120" fill-opacity="0.85" stroke="#1e293b" stroke-width="1"/>
+    
+    <!-- Tab -->
+    <rect x="16" y="-10" width="270" height="20" rx="4" fill="#0f172a" stroke="#6366f1" stroke-width="0.8"/>
+    <text x="26" y="4" fill="#818cf8" font-size="9.5" font-weight="700" class="mono-text">03 // FINANCIAL INTELLIGENCE</text>
+    <text x="1064" y="14" text-anchor="end" fill="#64748b" font-size="8.5" class="mono-text">DOMAIN SPECIALIZATIONS</text>
+
+    <!-- 4 Domains -->
+    <g transform="translate(16, 18)">
+      <rect width="246" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8" class="card-box"/>
+      <text x="14" y="20" fill="#f1f5f9" font-size="11" font-weight="700">💼 Personal &amp; Business Finance</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Dual balance sheets, net worth tracking</text>
+      <text x="14" y="48" fill="#64748b" font-size="8.5" class="mono-text">Isolated ledgers &amp; cash flows</text>
+    </g>
+
+    <g transform="translate(282, 18)">
+      <rect width="246" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8" class="card-box"/>
+      <text x="14" y="20" fill="#f1f5f9" font-size="11" font-weight="700">💸 Money Flow &amp; Transfer Audit</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Inflow/outflow tracking without double-count</text>
+      <text x="14" y="48" fill="#64748b" font-size="8.5" class="mono-text">Internal transfers excluded from income</text>
+    </g>
+
+    <g transform="translate(548, 18)">
+      <rect width="246" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8" class="card-box"/>
+      <text x="14" y="20" fill="#f1f5f9" font-size="11" font-weight="700">📈 Investment Intelligence</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Asset allocation distribution percentages</text>
+      <text x="14" y="48" fill="#64748b" font-size="8.5" class="mono-text">Honest cost-basis disclosure</text>
+    </g>
+
+    <g transform="translate(814, 18)">
+      <rect width="250" height="60" rx="6" fill="#0f172a" stroke="#334155" stroke-width="0.8" class="card-box"/>
+      <text x="14" y="20" fill="#f1f5f9" font-size="11" font-weight="700">⚖️ Deterministic Reconciliation Audit</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Two-way gateway vs bank ledger verification</text>
+      <text x="14" y="48" fill="#64748b" font-size="8.5" class="mono-text">Flags MDR fee variances, duplicates &amp; deposits</text>
+    </g>
+  </g>
+
+  <!-- Flow Connector 3 -> 4 (Splits into 6 Engine Inputs) -->
+  <g transform="translate(60, 422)">
+    <line x1="540" y1="0" x2="540" y2="15" stroke="#818cf8" stroke-width="1.5"/>
+    <path d="M 98,15 L 982,15" stroke="#334155" stroke-width="1"/>
+    <line x1="98" y1="15" x2="98" y2="28" stroke="#10b981" stroke-width="1.2" marker-end="url(#arrowEmerald)"/>
+    <line x1="275" y1="15" x2="275" y2="28" stroke="#10b981" stroke-width="1.2" marker-end="url(#arrowEmerald)"/>
+    <line x1="452" y1="15" x2="452" y2="28" stroke="#10b981" stroke-width="1.2" marker-end="url(#arrowEmerald)"/>
+    <line x1="628" y1="15" x2="628" y2="28" stroke="#10b981" stroke-width="1.2" marker-end="url(#arrowEmerald)"/>
+    <line x1="805" y1="15" x2="805" y2="28" stroke="#10b981" stroke-width="1.2" marker-end="url(#arrowEmerald)"/>
+    <line x1="982" y1="15" x2="982" y2="28" stroke="#10b981" stroke-width="1.2" marker-end="url(#arrowEmerald)"/>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- LAYER 4: DETERMINISTIC FINANCE ENGINES (HEART OF THE SYSTEM)              -->
+  <!-- ========================================================================= -->
+  <g class="layer-group" id="layer-engines" transform="translate(60, 454)">
+    <rect x="0" y="0" width="1080" height="114" rx="8" fill="url(#engineGrad)" stroke="url(#borderEmerald)" stroke-width="1.5"/>
+    
+    <!-- Tab -->
+    <rect x="16" y="-10" width="350" height="20" rx="4" fill="#022c22" stroke="#10b981" stroke-width="1"/>
+    <text x="26" y="4" fill="#34d399" font-size="9.5" font-weight="700" class="mono-text">04 // DETERMINISTIC FINANCE ENGINES (AUDITED TS)</text>
+    <text x="1064" y="14" text-anchor="end" fill="#10b981" font-size="8.5" class="mono-text">DETERMINISTIC FINANCIAL CALCULATIONS</text>
+
+    <!-- 6 Engine Modules -->
+    <!-- Engine 1 -->
+    <g transform="translate(14, 18)">
+      <rect width="168" height="82" rx="6" fill="#0f172a" fill-opacity="0.9" stroke="#059669" stroke-width="0.8" class="card-box"/>
+      <text x="10" y="17" fill="#f8fafc" font-size="10" font-weight="700">Overview Engine</text>
+      <text x="10" y="30" fill="#6ee7b7" font-size="8" class="mono-text">getFinancialOverview</text>
+      <text x="10" y="45" fill="#94a3b8" font-size="8">Assets − Liabilities</text>
+      <text x="10" y="58" fill="#94a3b8" font-size="8">Net cash position</text>
+      <rect x="10" y="66" width="70" height="12" rx="2" fill="#064e3b"/>
+      <text x="14" y="75" fill="#34d399" font-size="7" font-weight="700" class="mono-text">DETERMINISTIC</text>
+    </g>
+
+    <!-- Engine 2 -->
+    <g transform="translate(191, 18)">
+      <rect width="168" height="82" rx="6" fill="#0f172a" fill-opacity="0.9" stroke="#059669" stroke-width="0.8" class="card-box"/>
+      <text x="10" y="17" fill="#f8fafc" font-size="10" font-weight="700">Runway Engine</text>
+      <text x="10" y="30" fill="#6ee7b7" font-size="8" class="mono-text">computeRunway</text>
+      <text x="10" y="45" fill="#94a3b8" font-size="8">Cash ÷ Monthly Burn</text>
+      <text x="10" y="58" fill="#94a3b8" font-size="8">Surplus vs Burn status</text>
+      <rect x="10" y="66" width="70" height="12" rx="2" fill="#064e3b"/>
+      <text x="14" y="75" fill="#34d399" font-size="7" font-weight="700" class="mono-text">DETERMINISTIC</text>
+    </g>
+
+    <!-- Engine 3 -->
+    <g transform="translate(368, 18)">
+      <rect width="168" height="82" rx="6" fill="#0f172a" fill-opacity="0.9" stroke="#059669" stroke-width="0.8" class="card-box"/>
+      <text x="10" y="17" fill="#f8fafc" font-size="10" font-weight="700">Reconciliation Audit</text>
+      <text x="10" y="30" fill="#6ee7b7" font-size="8" class="mono-text">runReconciliationAudit</text>
+      <text x="10" y="45" fill="#94a3b8" font-size="8">Two-way ledger matching</text>
+      <text x="10" y="58" fill="#94a3b8" font-size="8">5% MDR fee tolerance</text>
+      <rect x="10" y="66" width="76" height="12" rx="2" fill="#064e3b"/>
+      <text x="14" y="75" fill="#34d399" font-size="7" font-weight="700" class="mono-text">DETERMINISTIC</text>
+    </g>
+
+    <!-- Engine 4 -->
+    <g transform="translate(545, 18)">
+      <rect width="168" height="82" rx="6" fill="#0f172a" fill-opacity="0.9" stroke="#059669" stroke-width="0.8" class="card-box"/>
+      <text x="10" y="17" fill="#f8fafc" font-size="10" font-weight="700">Digital Twin Engine</text>
+      <text x="10" y="30" fill="#6ee7b7" font-size="8" class="mono-text">DigitalTwinEngine</text>
+      <text x="10" y="45" fill="#94a3b8" font-size="8">12-mo forward steps</text>
+      <text x="10" y="58" fill="#94a3b8" font-size="8">Additions &amp; multipliers</text>
+      <rect x="10" y="66" width="70" height="12" rx="2" fill="#064e3b"/>
+      <text x="14" y="75" fill="#34d399" font-size="7" font-weight="700" class="mono-text">ACCOUNTING ID</text>
+    </g>
+
+    <!-- Engine 5 -->
+    <g transform="translate(722, 18)">
+      <rect width="168" height="82" rx="6" fill="#0f172a" fill-opacity="0.9" stroke="#059669" stroke-width="0.8" class="card-box"/>
+      <text x="10" y="17" fill="#f8fafc" font-size="10" font-weight="700">Tax Projection</text>
+      <text x="10" y="30" fill="#6ee7b7" font-size="8" class="mono-text">calculateTaxProjection</text>
+      <text x="10" y="45" fill="#94a3b8" font-size="8">FY 2024-25 Indian Slabs</text>
+      <text x="10" y="58" fill="#94a3b8" font-size="8">§87A rebate &amp; 4% cess</text>
+      <rect x="10" y="66" width="70" height="12" rx="2" fill="#064e3b"/>
+      <text x="14" y="75" fill="#34d399" font-size="7" font-weight="700" class="mono-text">STATUTORY EST</text>
+    </g>
+
+    <!-- Engine 6 -->
+    <g transform="translate(898, 18)">
+      <rect width="168" height="82" rx="6" fill="#0f172a" fill-opacity="0.9" stroke="#059669" stroke-width="0.8" class="card-box"/>
+      <text x="10" y="17" fill="#f8fafc" font-size="10" font-weight="700">Anomaly Detection</text>
+      <text x="10" y="30" fill="#6ee7b7" font-size="8" class="mono-text">detectAnomalies</text>
+      <text x="10" y="45" fill="#94a3b8" font-size="8">Variance thresholding</text>
+      <text x="10" y="58" fill="#94a3b8" font-size="8">DSO receivable &gt; 45d</text>
+      <rect x="10" y="66" width="70" height="12" rx="2" fill="#064e3b"/>
+      <text x="14" y="75" fill="#34d399" font-size="7" font-weight="700" class="mono-text">STATISTICAL</text>
+    </g>
+  </g>
+
+  <!-- Flow Connector 4 -> 5 (Verified Outputs Feed AI Controller) -->
+  <g transform="translate(60, 568)">
+    <line x1="540" y1="0" x2="540" y2="28" stroke="#10b981" stroke-width="2.5" marker-end="url(#arrowEmerald)" class="flow-path"/>
+    <rect x="430" y="8" width="220" height="15" rx="3" fill="#022c22" stroke="#10b981" stroke-width="0.7"/>
+    <text x="540" y="19" text-anchor="middle" fill="#34d399" font-size="8" font-weight="700" class="mono-text">VERIFIED FINANCIAL METRICS</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- LAYER 5: AI FINANCE CONTROLLER & AUDITABLE DECISION TRACE                 -->
+  <!-- ========================================================================= -->
+  <g class="layer-group" id="layer-controller" transform="translate(60, 600)">
+    <rect x="0" y="0" width="1080" height="106" rx="8" fill="url(#aiGrad)" stroke="url(#borderPurple)" stroke-width="1"/>
+    
+    <!-- Tab -->
+    <rect x="16" y="-10" width="370" height="20" rx="4" fill="#1e1b4b" stroke="#8b5cf6" stroke-width="0.8"/>
+    <text x="26" y="4" fill="#c084fc" font-size="9.5" font-weight="700" class="mono-text">05 // AI FINANCE CONTROLLER &amp; DECISION TRACE</text>
+    <text x="1064" y="14" text-anchor="end" fill="#a855f7" font-size="8.5" class="mono-text">GROUNDED AI EXPLANATIONS</text>
+
+    <!-- 3 Panels -->
+    <!-- Panel 1: Intent Routing -->
+    <g transform="translate(16, 18)">
+      <rect width="338" height="74" rx="6" fill="#0f172a" stroke="#3730a3" stroke-width="0.8" class="card-box"/>
+      <text x="14" y="20" fill="#f8fafc" font-size="11" font-weight="700">Natural Intent Routing</text>
+      <text x="14" y="36" fill="#94a3b8" font-size="9">Classifies query (Runway, Twin, Reconciliation, Tax)</text>
+      <text x="14" y="50" fill="#a5b4fc" font-size="8.5" class="mono-text">Dispatches deterministic tools with verified outputs</text>
+      <text x="14" y="64" fill="#64748b" font-size="8">FinanceControllerOrchestrator.dispatch()</text>
+    </g>
+
+    <!-- Panel 2: Grounded AI Explanation -->
+    <g transform="translate(371, 18)">
+      <rect width="338" height="74" rx="6" fill="#0f172a" stroke="#3730a3" stroke-width="0.8" class="card-box"/>
+      <text x="14" y="20" fill="#f8fafc" font-size="11" font-weight="700">Grounded AI Explanations</text>
+      <text x="14" y="36" fill="#94a3b8" font-size="9">Explains verified calculation outputs in plain context</text>
+      <text x="14" y="50" fill="#34d399" font-size="8.5" class="mono-text">Strict reference to pre-computed metrics only</text>
+      <text x="14" y="64" fill="#64748b" font-size="8">Status: STRICTLY_GROUNDED vs PROJECTION_ESTIMATE</text>
+    </g>
+
+    <!-- Panel 3: Auditable Decision Trace -->
+    <g transform="translate(726, 18)">
+      <rect width="338" height="74" rx="6" fill="#0f172a" stroke="#3730a3" stroke-width="0.8" class="card-box"/>
+      <text x="14" y="20" fill="#f8fafc" font-size="11" font-weight="700">Auditable Decision Traces</text>
+      <text x="14" y="36" fill="#94a3b8" font-size="9">Trace ID, timestamp, intent, tools used &amp; formulas</text>
+      <text x="14" y="50" fill="#fbcfe8" font-size="8.5" class="mono-text">Inspectable reasoning pipeline for judges &amp; operators</text>
+      <text x="14" y="64" fill="#64748b" font-size="8">Auditable decision trace · Grounded explanation only</text>
+    </g>
+  </g>
+
+  <!-- Flow Connector 5 -> 6 -->
+  <g transform="translate(60, 706)">
+    <line x1="540" y1="0" x2="540" y2="28" stroke="#8b5cf6" stroke-width="2" marker-end="url(#arrowPurple)" class="flow-path"/>
+    <rect x="420" y="8" width="240" height="15" rx="3" fill="#1e1b4b" stroke="#8b5cf6" stroke-width="0.7"/>
+    <text x="540" y="19" text-anchor="middle" fill="#c084fc" font-size="8" font-weight="700" class="mono-text">SIMULATION PARAMETERS &amp; PROPOSALS</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- LAYER 6: FORWARD DIGITAL TWIN                                             -->
+  <!-- ========================================================================= -->
+  <g class="layer-group" id="layer-twin" transform="translate(60, 738)">
+    <rect x="0" y="0" width="1080" height="88" rx="8" fill="#0b1329" fill-opacity="0.9" stroke="url(#borderCyan)" stroke-width="1"/>
+    
+    <!-- Tab -->
+    <rect x="16" y="-10" width="270" height="20" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.8"/>
+    <text x="26" y="4" fill="#06b6d4" font-size="9.5" font-weight="700" class="mono-text">06 // FORWARD DIGITAL TWIN</text>
+    <text x="1064" y="14" text-anchor="end" fill="#38bdf8" font-size="8.5" class="mono-text">12-MONTH DETERMINISTIC SANDBOX</text>
+
+    <!-- 2 Blocks -->
+    <g transform="translate(16, 16)">
+      <rect width="516" height="58" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="0.8"/>
+      <text x="14" y="20" fill="#f8fafc" font-size="10.5" font-weight="700">Verified Linear Baseline Trajectory</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Initial Cash: ₹4,50,000 · Net Inflow: +₹85,000/mo (₹1,80,000 In − ₹95,000 Out)</text>
+      <text x="14" y="49" fill="#10b981" font-size="8.5" font-weight="700" class="mono-text">Proof: ₹4,50,000 + (12 × ₹85,000) = ₹14,70,000 (Month 12)</text>
+      <circle cx="500" cy="28" r="3" fill="#10b981"/>
+    </g>
+
+    <g transform="translate(548, 16)">
+      <rect width="516" height="58" rx="5" fill="#0f172a" stroke="#1e293b" stroke-width="0.8"/>
+      <text x="14" y="20" fill="#f8fafc" font-size="10.5" font-weight="700">What-If Dynamic Scenario Levers</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Variable Additions (±Cash/Revenue/OPEX) · Variable Multipliers (×Revenue/×OPEX)</text>
+      <text x="14" y="49" fill="#38bdf8" font-size="8.5" class="mono-text">Preserves accounting identity: Cash_n = Cash_n-1 + (Revenue_n − Expenses_n)</text>
+      <circle cx="500" cy="28" r="3" fill="#38bdf8"/>
+    </g>
+  </g>
+
+  <!-- Flow Connector 6 -> 7 -->
+  <g transform="translate(60, 826)">
+    <line x1="540" y1="0" x2="540" y2="28" stroke="#f59e0b" stroke-width="2" marker-end="url(#arrowGold)" class="flow-path"/>
+    <rect x="420" y="8" width="240" height="15" rx="3" fill="#451a03" stroke="#f59e0b" stroke-width="0.7"/>
+    <text x="540" y="19" text-anchor="middle" fill="#fde68a" font-size="8" font-weight="700" class="mono-text">STAGED ACTION PROPOSAL QUEUE</text>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- LAYER 7: HUMAN-AUTHORIZED STAGED ACTIONS (FINAL CONTROL GATE)             -->
+  <!-- ========================================================================= -->
+  <g class="layer-group" id="layer-actions" transform="translate(60, 858)">
+    <rect x="0" y="0" width="1080" height="88" rx="8" fill="url(#actionGrad)" stroke="url(#borderGold)" stroke-width="1.2"/>
+    
+    <!-- Tab -->
+    <rect x="16" y="-10" width="310" height="20" rx="4" fill="#451a03" stroke="#f59e0b" stroke-width="0.8"/>
+    <text x="26" y="4" fill="#fde68a" font-size="9.5" font-weight="700" class="mono-text">07 // HUMAN-AUTHORIZED STAGED ACTIONS</text>
+    <text x="1064" y="14" text-anchor="end" fill="#f59e0b" font-size="8.5" class="mono-text">OPERATOR IN THE LOOP</text>
+
+    <!-- 2 Pillars -->
+    <g transform="translate(16, 16)">
+      <rect width="516" height="58" rx="5" fill="#0f172a" stroke="#78350f" stroke-width="0.8"/>
+      <text x="14" y="20" fill="#f8fafc" font-size="10.5" font-weight="700">Staged Action Proposal Queue</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Proposed scenario variable imports, exception reviews, or ledger updates are staged</text>
+      <text x="14" y="49" fill="#f59e0b" font-size="8.5" font-weight="600" class="mono-text">No autonomous state mutations or live funds movement</text>
+      <circle cx="500" cy="28" r="3" fill="#f59e0b"/>
+    </g>
+
+    <g transform="translate(548, 16)">
+      <rect width="516" height="58" rx="5" fill="#0f172a" stroke="#78350f" stroke-width="0.8"/>
+      <text x="14" y="20" fill="#f8fafc" font-size="10.5" font-weight="700">Explicit Operator Authorization Gate</text>
+      <text x="14" y="35" fill="#94a3b8" font-size="9">Requires explicit human click authorization ('Apply Variable' / 'Confirm Action')</text>
+      <text x="14" y="49" fill="#34d399" font-size="8.5" font-weight="600" class="mono-text">Auditable trail · Complete operator sovereignty over execution</text>
+      <circle cx="500" cy="28" r="3" fill="#10b981"/>
+    </g>
+  </g>
+
+  <!-- ========================================================================= -->
+  <!-- BOTTOM TECHNICAL SPECIFICATION & LEGEND STRIP                             -->
+  <!-- ========================================================================= -->
+  <g transform="translate(60, 960)">
+    <!-- Circuit Border -->
+    <rect x="0" y="0" width="1080" height="70" rx="6" fill="#0b1120" stroke="#1e293b" stroke-width="1"/>
+
+    <!-- Left Specs -->
+    <g transform="translate(20, 16)">
+      <text x="0" y="12" fill="#64748b" font-size="8.5" font-weight="700" class="mono-text">FINEXFLY ARCHITECTURAL INVARIANTS</text>
+      <text x="0" y="28" fill="#94a3b8" font-size="8.5">
+        <tspan fill="#38bdf8" font-weight="600">DATA</tspan> Source telemetry · 
+        <tspan fill="#34d399" font-weight="600">ENGINE</tspan> Deterministic math · 
+        <tspan fill="#a78bfa" font-weight="600">AI</tspan> Routing &amp; explanation · 
+        <tspan fill="#f472b6" font-weight="600">TRACE</tspan> Auditable reasoning · 
+        <tspan fill="#fbbf24" font-weight="600">ACTION</tspan> Human authorization
+      </text>
+      <text x="0" y="43" fill="#64748b" font-size="8" class="mono-text">
+        Tri-Mode Architecture: <tspan fill="#34d399">REAL</tspan> (Authenticated Supabase RLS) · <tspan fill="#38bdf8">DEMO</tspan> (Synthetic Benchmark) · <tspan fill="#94a3b8">EMPTY</tspan> (Honest ₹0 Baseline)
+      </text>
+    </g>
+
+    <!-- Right Verification Badges -->
+    <g transform="translate(830, 16)">
+      <rect x="0" y="0" width="110" height="38" rx="4" fill="#0f172a" stroke="#10b981" stroke-width="0.8"/>
+      <text x="55" y="16" text-anchor="middle" fill="#34d399" font-size="8" font-weight="700" class="mono-text">46/46 TESTS</text>
+      <text x="55" y="29" text-anchor="middle" fill="#6ee7b7" font-size="7.5" class="mono-text">VERIFIED PASS</text>
+
+      <rect x="120" y="0" width="110" height="38" rx="4" fill="#0f172a" stroke="#06b6d4" stroke-width="0.8"/>
+      <text x="175" y="16" text-anchor="middle" fill="#38bdf8" font-size="8" font-weight="700" class="mono-text">24/24 ROUTES</text>
+      <text x="175" y="29" text-anchor="middle" fill="#7dd3fc" font-size="7.5" class="mono-text">TURBOPACK BUILD</text>
+    </g>
+  </g>
+</svg>
