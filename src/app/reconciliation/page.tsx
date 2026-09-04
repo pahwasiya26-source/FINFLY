@@ -232,6 +232,7 @@ export default function ReconciliationPage() {
         <div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
             <span className="pill-badge pill-emerald">Two-Way Matching Engine</span>
+            <span className="pill-badge pill-neutral">Synthetic Benchmark</span>
             <span style={{ color: 'var(--text-muted)' }}>•</span>
             <span style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)' }}>Last Audit: {auditTimestamp}</span>
           </div>
@@ -242,7 +243,7 @@ export default function ReconciliationPage() {
             <h1 style={{ fontSize: '2.1rem', fontWeight: 800 }}>Two-Way Reconciliation &amp; Audit Workspace</h1>
           </div>
           <p style={{ fontSize: '0.94rem', color: 'var(--text-secondary)', marginTop: '4px' }}>
-            Automated cryptographic matching between Razorpay gateway capture telemetries and bank settlement ledgers.
+            Automated cryptographic matching between synthetic Razorpay gateway capture telemetries and bank settlement ledgers.
           </p>
         </div>
 
@@ -254,6 +255,74 @@ export default function ReconciliationPage() {
           <Link href="/finance-controller" className="btn-secondary" style={{ fontSize: '0.84rem' }}>
             Ask Controller
           </Link>
+        </div>
+      </div>
+
+      {/* ── BATCH VERIFICATION BENCHMARK SECTION ── */}
+      <div
+        className="glass-panel"
+        style={{
+          padding: '16px 22px',
+          background: 'rgba(16, 185, 129, 0.04)',
+          border: '1px solid rgba(16, 185, 129, 0.2)',
+          borderRadius: '12px',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: '14px',
+        }}
+      >
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <div
+            style={{
+              width: '34px',
+              height: '34px',
+              borderRadius: '8px',
+              background: 'rgba(16, 185, 129, 0.12)',
+              color: 'var(--accent-primary)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexShrink: 0,
+            }}
+          >
+            <ShieldCheck size={18} />
+          </div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              <span style={{ fontSize: '0.9rem', fontWeight: 700, color: 'var(--text-primary)' }}>
+                Synthetic Razorpay-Style Reconciliation Benchmark
+              </span>
+              <span className="pill-badge pill-neutral" style={{ fontSize: '0.68rem', padding: '2px 8px' }}>
+                Buildathon Evaluation Batch
+              </span>
+            </div>
+            <p style={{ fontSize: '0.78rem', color: 'var(--text-secondary)', marginTop: '2px', margin: 0 }}>
+              Batch verification running deterministic matching across 50+ synthetic entities without cherry-picking.
+            </p>
+          </div>
+        </div>
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+          <span className="pill-badge pill-neutral" style={{ fontSize: '0.76rem' }}>
+            {syntheticRazorpayRecords.length} Gateway Records
+          </span>
+          <span className="pill-badge pill-neutral" style={{ fontSize: '0.76rem' }}>
+            {syntheticBankTransactions.length} Bank Records
+          </span>
+          <span className="pill-badge pill-neutral" style={{ fontSize: '0.76rem' }}>
+            {totalRecords} Evaluated Entities
+          </span>
+          <span className="pill-badge pill-emerald" style={{ fontSize: '0.76rem' }}>
+            {matchedRecords} Matched
+          </span>
+          <span className="pill-badge pill-gold" style={{ fontSize: '0.76rem' }}>
+            {exceptionRecords} Exceptions
+          </span>
+          <span className="pill-badge pill-emerald" style={{ fontSize: '0.76rem', fontWeight: 700 }}>
+            {matchedRecords}/{totalRecords} matched — {matchRate}% match rate
+          </span>
         </div>
       </div>
 
@@ -280,7 +349,7 @@ export default function ReconciliationPage() {
             {matchRate}%
           </div>
           <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-            {matchedRecords} of {totalRecords} records resolved
+            {matchedRecords} of {totalRecords} matched — {matchRate}% match rate
           </div>
         </div>
 
@@ -304,7 +373,7 @@ export default function ReconciliationPage() {
             {syntheticRazorpayRecords.length}
           </div>
           <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-            Razorpay Webhook Stream
+            Synthetic Razorpay Telemetry
           </div>
         </div>
 
@@ -316,7 +385,7 @@ export default function ReconciliationPage() {
             {syntheticBankTransactions.length}
           </div>
           <div style={{ fontSize: '0.76rem', color: 'var(--text-secondary)' }}>
-            Direct HDFC/Axis Statement Feed
+            Synthetic Bank Statement Ledger
           </div>
         </div>
       </div>
@@ -448,7 +517,16 @@ export default function ReconciliationPage() {
                         )}
                       </div>
                     </td>
-                    <td>{getStatusBadge(item.status, item.id)}</td>
+                    <td>
+                      <div>
+                        {getStatusBadge(item.status, item.id)}
+                        {item.status !== 'MATCHED' && !approvedReconciliations.has(item.id) && (
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-secondary)', marginTop: '4px', maxWidth: '280px', lineHeight: 1.3 }}>
+                            {item.note}
+                          </div>
+                        )}
+                      </div>
+                    </td>
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                         <span style={{ fontFamily: 'Outfit', fontWeight: 700 }}>{approvedReconciliations.has(item.id) ? 100 : item.confidence}%</span>

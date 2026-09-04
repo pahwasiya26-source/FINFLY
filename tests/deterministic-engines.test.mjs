@@ -114,6 +114,60 @@ test('runReconciliationAudit: Matches synthetic ledger dataset with exact mathem
   assert.equal(duplicateDiscrepancy.id, 'pay_6F');
 });
 
+test('Reconciliation Benchmark: Verifies >=50 gateway records and >=50 evaluated entities', () => {
+  const audit = runReconciliationAudit();
+  assert.ok(audit.data.totalGatewayRecords >= 50, `Expected >= 50 gateway records, got ${audit.data.totalGatewayRecords}`);
+  const totalEvaluated = audit.data.matchedCount + audit.data.discrepancyCount;
+  assert.ok(totalEvaluated >= 50, `Expected >= 50 evaluated entities, got ${totalEvaluated}`);
+  assert.equal(audit.data.totalGatewayRecords, 60);
+  assert.equal(audit.data.totalBankTransactions, 58);
+  assert.equal(totalEvaluated, 60);
+});
+
+test('Reconciliation Benchmark: Mathematical precision of match rate and honest exception disclosure', () => {
+  const audit = runReconciliationAudit();
+  const totalEvaluated = audit.data.matchedCount + audit.data.discrepancyCount;
+  const expectedRate = Number(((audit.data.matchedCount / totalEvaluated) * 100).toFixed(1));
+  assert.equal(audit.data.matchRatePct, expectedRate);
+  assert.equal(audit.data.matchRatePct, 81.7);
+  assert.equal(audit.data.matchedCount, 49);
+  assert.equal(audit.data.discrepancyCount, 11);
+
+  // Exceptions must not be hidden: discrepancyCount equals discrepancies array length
+  assert.equal(audit.data.discrepancies.length, audit.data.discrepancyCount);
+
+  // Verify all exception types are present
+  const types = new Set(audit.data.discrepancies.map(d => d.type));
+  assert.ok(types.has('MDR_FEE_VARIANCE'), 'MDR_FEE_VARIANCE must be present');
+  assert.ok(types.has('DUPLICATE_WEBHOOK'), 'DUPLICATE_WEBHOOK must be present');
+  assert.ok(types.has('MISSING_IN_BANK'), 'MISSING_IN_BANK must be present');
+  assert.ok(types.has('UNKNOWN_BANK_CREDIT'), 'UNKNOWN_BANK_CREDIT must be present');
+
+  // Verify preserved edge cases
+  const setl5E = audit.data.discrepancies.find(d => d.id === 'setl_5E');
+  assert.ok(setl5E);
+  assert.equal(setl5E.difference, 5);
+
+  const pay6F = audit.data.discrepancies.find(d => d.id === 'pay_6F');
+  assert.ok(pay6F);
+  assert.equal(pay6F.type, 'DUPLICATE_WEBHOOK');
+
+  const txn106 = audit.data.discrepancies.find(d => d.id === 'txn_106');
+  assert.ok(txn106);
+  assert.equal(txn106.amount, 10000);
+});
+
+test('Reconciliation Benchmark: Deterministic reproducibility across repeated runs', () => {
+  const run1 = runReconciliationAudit();
+  const run2 = runReconciliationAudit();
+  assert.deepEqual(run1.data.totalGatewayRecords, run2.data.totalGatewayRecords);
+  assert.deepEqual(run1.data.totalBankTransactions, run2.data.totalBankTransactions);
+  assert.deepEqual(run1.data.matchedCount, run2.data.matchedCount);
+  assert.deepEqual(run1.data.discrepancyCount, run2.data.discrepancyCount);
+  assert.deepEqual(run1.data.matchRatePct, run2.data.matchRatePct);
+  assert.deepEqual(run1.data.discrepancies, run2.data.discrepancies);
+});
+
 // -------------------------------------------------------------
 // 4. Statutory Tax Projection Slabs Test
 // -------------------------------------------------------------

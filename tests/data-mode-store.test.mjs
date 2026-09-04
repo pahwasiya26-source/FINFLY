@@ -735,11 +735,11 @@ test('Phase 6: REAL mode keeps invoices and obligations empty without demo leaks
 test('Phase 7: Deterministic reconciliation match rate and exception calculation', () => {
   const recon = runReconciliationAudit();
   assert.equal(recon.success, true);
-  assert.equal(recon.data.totalGatewayRecords, 8);
-  assert.equal(recon.data.totalBankTransactions, 7);
-  assert.equal(recon.data.matchedCount, 4);
-  assert.equal(recon.data.discrepancyCount, 3);
-  assert.equal(recon.data.matchRatePct, 57.1); // 4 / 7 * 100
+  assert.equal(recon.data.totalGatewayRecords, 60);
+  assert.equal(recon.data.totalBankTransactions, 58);
+  assert.equal(recon.data.matchedCount, 49);
+  assert.equal(recon.data.discrepancyCount, 11);
+  assert.equal(recon.data.matchRatePct, 81.7); // 49 / 60 * 100
 
   // Check exception specifics
   const duplicate = recon.data.discrepancies.find((d) => d.type === 'DUPLICATE_WEBHOOK');
@@ -749,6 +749,10 @@ test('Phase 7: Deterministic reconciliation match rate and exception calculation
   const mdr = recon.data.discrepancies.find((d) => d.type === 'MDR_FEE_VARIANCE');
   assert.ok(mdr);
   assert.equal(mdr.id, 'setl_5E');
+
+  const unk = recon.data.discrepancies.find((d) => d.type === 'UNKNOWN_BANK_CREDIT');
+  assert.ok(unk);
+  assert.equal(unk.id, 'txn_106');
 });
 
 test('Phase 7: Finance Controller Decision Trace contains grounded metrics and STRICTLY_GROUNDED status', async () => {
@@ -759,7 +763,7 @@ test('Phase 7: Finance Controller Decision Trace contains grounded metrics and S
 
   const reconMetric = resp.decisionTrace.groundedMetrics.find((m) => m.label === 'Match Rate');
   assert.ok(reconMetric);
-  assert.equal(reconMetric.value, '57.1%');
+  assert.equal(reconMetric.value, '81.7%');
 });
 
 test('Phase 7: Finance Controller staged actions require explicit human authorization', async () => {
