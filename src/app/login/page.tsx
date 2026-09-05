@@ -24,7 +24,14 @@ import { useAuth } from '../../lib/auth/AuthContext';
 function LoginFormContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const redirectUrl = searchParams.get('redirect') || '/';
+  const rawRedirect = searchParams.get('redirect');
+  const redirectUrl =
+    rawRedirect &&
+    rawRedirect.startsWith('/') &&
+    !rawRedirect.startsWith('//') &&
+    !rawRedirect.startsWith('/login')
+      ? rawRedirect
+      : '/';
   const urlError = searchParams.get('error');
 
   const { user, isLoading: authLoading, signIn, signUp, error: authContextError, isDemoMode, clearError } = useAuth();
@@ -53,17 +60,15 @@ function LoginFormContent() {
     }
   }, [urlError]);
 
-  // Bug 5 fix: use AuthContext isLoading (authLoading) not local submit state
-  // to guard the redirect — prevents double-push race conditions
+  // Already authenticated user visit redirect (e.g. visiting /login while logged in)
   useEffect(() => {
-    if (user && !authLoading && !confirmationSent) {
-      router.push(redirectUrl);
+    if (user && !authLoading && !confirmationSent && !isSubmitting) {
+      window.location.assign(redirectUrl);
     }
-  }, [user, authLoading, router, redirectUrl, confirmationSent]);
+  }, [user, authLoading, redirectUrl, confirmationSent, isSubmitting]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Bug 5 fix: guard with both ref (synchronous) and state to prevent any race
     if (isSubmitting || submittingRef.current) return;
     submittingRef.current = true;
     setLocalError(null);
@@ -74,29 +79,35 @@ function LoginFormContent() {
       if (authMode === 'signin') {
         const res = await signIn(email, password);
         if (res.success) {
-          // onAuthStateChange in AuthContext will update user state;
-          // the redirect useEffect above will fire automatically.
-          // Do not push here to avoid double redirect.
+          // Keep button in loading/disabled state to prevent accidental second clicks
+          // Navigate definitively to the intended destination with refreshed session cookies
+          window.location.assign(redirectUrl);
+          return;
         } else {
           setLocalError(res.error || 'Failed to sign in. Please check your credentials.');
+          setIsSubmitting(false);
+          submittingRef.current = false;
         }
       } else {
         const res = await signUp(email, password, fullName);
         if (res.success) {
           if (res.requiresConfirmation) {
-            // Bug 1 fix: do NOT redirect. Show confirmation UI instead.
             setConfirmedEmail(email);
             setConfirmationSent(true);
+            setIsSubmitting(false);
+            submittingRef.current = false;
+          } else {
+            window.location.assign(redirectUrl);
+            return;
           }
-          // If requiresConfirmation is false, AuthContext already has a session;
-          // the redirect useEffect will fire automatically via user state change.
         } else {
           setLocalError(res.error || 'Failed to create account. Please try again.');
+          setIsSubmitting(false);
+          submittingRef.current = false;
         }
       }
     } catch (err: any) {
       setLocalError(err?.message || 'An unexpected authentication error occurred.');
-    } finally {
       setIsSubmitting(false);
       submittingRef.current = false;
     }

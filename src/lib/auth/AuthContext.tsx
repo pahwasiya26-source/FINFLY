@@ -213,23 +213,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             authData.user.email?.split('@')[0] ||
             'User',
         });
-        // Non-blocking profile synchronization
-        Promise.resolve(
-          supabase
-            .from('profiles')
-            .upsert(
-              {
-                id: authData.user.id,
-                email: authData.user.email || '',
-                full_name:
-                  authData.user.user_metadata?.full_name ||
-                  authData.user.email?.split('@')[0] ||
-                  '',
-                updated_at: new Date().toISOString(),
-              },
-              { onConflict: 'id' }
-            )
-        ).then(() => {}).catch(() => {});
       }
       return { success: true };
     }
