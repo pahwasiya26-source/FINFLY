@@ -195,6 +195,7 @@ export interface AppState {
   isHydrating: boolean;
   lastSyncedAt: string | null;
   dataError: string | null;
+  hydratedUserId: string | null;
 
   // ── Financial Data Collections ────────────────────────────────────────────
   accounts: DbAccount[];
@@ -212,8 +213,11 @@ export interface AppState {
   // ── Demo & Hydration Controls ─────────────────────────────────────────────
   activateDemo: () => void;
   exitDemo: () => void;
-  hydrateRealData: (accounts: DbAccount[], transactions: DbTransaction[]) => void;
-  fetchAndHydrate: (userId: string) => Promise<void>;
+  hydrateRealData: (accounts: DbAccount[], transactions: DbTransaction[], userId?: string) => void;
+  fetchAndHydrate: (
+    userId: string,
+    options?: { force?: boolean; background?: boolean }
+  ) => Promise<void>;
 
   // ── Financial Overview Computed Accessor ──────────────────────────────────
   getCurrentData: () => FinancialOverview;
@@ -259,6 +263,10 @@ export interface AppState {
   rejectReconciliation: (id: string) => void;
 }
 
+// In-flight hydration promise cache to deduplicate concurrent requests
+let activeHydrationPromise: Promise<void> | null = null;
+let activeHydrationUserId: string | null = null;
+
 export const useStore = create<AppState>((set, get) => ({
   // ── Initial State (Clean Defaults: No Mock Data Auto-Loaded) ──────────────
   mode: 'PERSONAL',
@@ -266,6 +274,7 @@ export const useStore = create<AppState>((set, get) => ({
   isHydrating: false,
   lastSyncedAt: null,
   dataError: null,
+  hydratedUserId: null,
 
   accounts: [],
   transactions: [],
@@ -311,12 +320,13 @@ export const useStore = create<AppState>((set, get) => ({
     }),
 
   // ── Hydrate from Real Supabase Queries ────────────────────────────────────
-  hydrateRealData: (accounts, dbTransactions) =>
-    set(() => {
+  hydrateRealData: (accounts, dbTransactions, userId) =>
+    set((state) => {
       const hasRecords = accounts.length > 0 || dbTransactions.length > 0;
       return {
         dataMode: hasRecords ? 'REAL' : 'EMPTY',
         isHydrating: false,
+        hydratedUserId: userId ?? state.hydratedUserId,
         lastSyncedAt: new Date().toISOString(),
         dataError: null,
         accounts,
@@ -328,31 +338,56 @@ export const useStore = create<AppState>((set, get) => ({
       };
     }),
 
-  fetchAndHydrate: async (userId: string) => {
-    set({ isHydrating: true, dataError: null });
-    try {
-      const [acctRes, txRes] = await Promise.all([
-        fetchUserAccounts(userId),
-        fetchUserTransactions(userId),
-      ]);
+  fetchAndHydrate: async (userId: string, options) => {
+    const { hydratedUserId, lastSyncedAt } = get();
 
-      if (acctRes.error || txRes.error) {
+    // 1. Re-use existing loaded data during client-side navigation without refetching
+    if (!options?.force && hydratedUserId === userId && lastSyncedAt !== null) {
+      return;
+    }
+
+    // 2. In-flight request deduplication: reuse active promise if already querying for this user
+    if (activeHydrationPromise && activeHydrationUserId === userId) {
+      return activeHydrationPromise;
+    }
+
+    // 3. Only show blocking skeleton for initial cold-start hydration before any data exists
+    const isInitial = lastSyncedAt === null || hydratedUserId !== userId;
+    if (isInitial && !options?.background) {
+      set({ isHydrating: true, dataError: null });
+    }
+
+    activeHydrationUserId = userId;
+    activeHydrationPromise = (async () => {
+      try {
+        const [acctRes, txRes] = await Promise.all([
+          fetchUserAccounts(userId),
+          fetchUserTransactions(userId),
+        ]);
+
+        if (acctRes.error || txRes.error) {
+          set({
+            isHydrating: false,
+            dataError: acctRes.error || txRes.error || 'Failed to fetch financial data',
+          });
+          return;
+        }
+
+        const accounts = acctRes.data ?? [];
+        const dbTx = txRes.data ?? [];
+        get().hydrateRealData(accounts, dbTx, userId);
+      } catch (err: any) {
         set({
           isHydrating: false,
-          dataError: acctRes.error || txRes.error || 'Failed to fetch financial data',
+          dataError: err?.message || 'Unexpected synchronization error',
         });
-        return;
+      } finally {
+        activeHydrationPromise = null;
+        activeHydrationUserId = null;
       }
+    })();
 
-      const accounts = acctRes.data ?? [];
-      const dbTx = txRes.data ?? [];
-      get().hydrateRealData(accounts, dbTx);
-    } catch (err: any) {
-      set({
-        isHydrating: false,
-        dataError: err?.message || 'Unexpected synchronization error',
-      });
-    }
+    return activeHydrationPromise;
   },
 
   // ── Dynamic Financial Overview Selector ───────────────────────────────────

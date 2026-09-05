@@ -131,6 +131,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             obligations: [],
             isHydrating: false,
             dataError: null,
+            hydratedUserId: null,
+            lastSyncedAt: null,
           });
         }
         setIsLoading(false);
@@ -364,6 +366,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       obligations: [],
       isHydrating: false,
       dataError: null,
+      hydratedUserId: null,
+      lastSyncedAt: null,
     });
   };
 

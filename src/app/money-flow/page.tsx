@@ -32,7 +32,7 @@ import { AddTransactionModal } from '../../components/AddTransactionModal';
 import { AddAccountModal } from '../../components/AddAccountModal';
 
 export default function MoneyFlowPage() {
-  const { mode, transactions, accounts, removeTransaction, fetchAndHydrate, dataMode, isHydrating, dataError } = useStore();
+  const { mode, transactions, accounts, removeTransaction, fetchAndHydrate, dataMode, isHydrating, lastSyncedAt, dataError } = useStore();
   const { user } = useAuth();
 
   const [isAddTxOpen, setIsAddTxOpen] = useState(false);
@@ -177,7 +177,7 @@ export default function MoneyFlowPage() {
     document.body.removeChild(link);
   };
 
-  if (isHydrating && dataMode !== 'DEMO') {
+  if (isHydrating && dataMode !== 'DEMO' && lastSyncedAt === null) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%', padding: '40px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -206,7 +206,7 @@ export default function MoneyFlowPage() {
           </div>
           <button
             type="button"
-            onClick={() => user?.id && fetchAndHydrate(user.id)}
+            onClick={() => user?.id && fetchAndHydrate(user.id, { force: true })}
             className="btn-secondary"
             style={{ fontSize: '0.78rem', padding: '4px 10px' }}
           >

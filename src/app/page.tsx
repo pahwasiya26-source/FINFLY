@@ -47,6 +47,7 @@ export default function DashboardHome() {
     accounts,
     dataMode,
     isHydrating,
+    lastSyncedAt,
     dataError,
     activateDemo,
     exitDemo,
@@ -300,7 +301,7 @@ export default function DashboardHome() {
     }
   };
 
-  if (isHydrating && dataMode !== 'DEMO') {
+  if (isHydrating && dataMode !== 'DEMO' && lastSyncedAt === null) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%', padding: '40px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -329,7 +330,7 @@ export default function DashboardHome() {
           </div>
           <button
             type="button"
-            onClick={() => user?.id && fetchAndHydrate(user.id)}
+            onClick={() => user?.id && fetchAndHydrate(user.id, { force: true })}
             className="btn-secondary"
             style={{ fontSize: '0.78rem', padding: '4px 10px' }}
           >

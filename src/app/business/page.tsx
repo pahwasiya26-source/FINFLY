@@ -32,7 +32,7 @@ import { AddAccountModal } from '../../components/AddAccountModal';
 import { AddTransactionModal } from '../../components/AddTransactionModal';
 
 export default function BusinessPage() {
-  const { accounts, transactions, invoices, dataMode, isHydrating, dataError, fetchAndHydrate } = useStore();
+  const { accounts, transactions, invoices, dataMode, isHydrating, lastSyncedAt, dataError, fetchAndHydrate } = useStore();
   const { user } = useAuth();
 
   const [isAddAccountOpen, setIsAddAccountOpen] = useState(false);
@@ -139,7 +139,7 @@ export default function BusinessPage() {
     .filter((inv) => inv.type === 'RECEIVABLE' && inv.agingBucket === '60+ Days Overdue')
     .reduce((sum, inv) => sum + inv.amount, 0);
 
-  if (isHydrating && dataMode !== 'DEMO') {
+  if (isHydrating && dataMode !== 'DEMO' && lastSyncedAt === null) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%', padding: '40px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -168,7 +168,7 @@ export default function BusinessPage() {
           </div>
           <button
             type="button"
-            onClick={() => user?.id && fetchAndHydrate(user.id)}
+            onClick={() => user?.id && fetchAndHydrate(user.id, { force: true })}
             className="btn-secondary"
             style={{ fontSize: '0.78rem', padding: '4px 10px' }}
           >

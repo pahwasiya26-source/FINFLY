@@ -6,18 +6,27 @@ import { MainNavigation } from './MainNavigation';
 import { ModeToggle } from './ModeToggle';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '../lib/auth/AuthContext';
+import { useStore } from '../store/useStore';
 import { Menu, X, Shield, Lock } from 'lucide-react';
 
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { signOut } = useAuth();
+  const { user, signOut } = useAuth();
+  const { dataMode, fetchAndHydrate } = useStore();
   const isAuthPage =
     pathname.startsWith('/login') ||
     pathname.startsWith('/forgot-password') ||
     pathname.startsWith('/reset-password') ||
     pathname.startsWith('/auth/');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+
+  // App/Session-level data hydration — runs once when user session is active
+  React.useEffect(() => {
+    if (user?.id && dataMode !== 'DEMO') {
+      fetchAndHydrate(user.id);
+    }
+  }, [user?.id, dataMode, fetchAndHydrate]);
 
   // If on authentication pages, render full screen without dashboard shell
   if (isAuthPage) {

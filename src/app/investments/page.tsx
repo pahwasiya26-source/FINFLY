@@ -27,7 +27,7 @@ import { useAuth } from '../../lib/auth/AuthContext';
 import { AddAccountModal } from '../../components/AddAccountModal';
 
 export default function InvestmentsPage() {
-  const { mode, getCurrentData, investments, accounts, dataMode, isHydrating, dataError, fetchAndHydrate } = useStore();
+  const { mode, getCurrentData, investments, accounts, dataMode, isHydrating, lastSyncedAt, dataError, fetchAndHydrate } = useStore();
   const { user } = useAuth();
   const data = getCurrentData();
 
@@ -87,7 +87,7 @@ export default function InvestmentsPage() {
   const totalFutureInvested = totalCurrentValue + monthlySip * horizonYears * 12;
   const totalCompoundedGain = projectedFutureValue - totalFutureInvested;
 
-  if (isHydrating && dataMode !== 'DEMO') {
+  if (isHydrating && dataMode !== 'DEMO' && lastSyncedAt === null) {
     return (
       <div style={{ display: 'flex', flexDirection: 'column', gap: '24px', maxWidth: '1440px', margin: '0 auto', width: '100%', padding: '40px 0' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
@@ -116,7 +116,7 @@ export default function InvestmentsPage() {
           </div>
           <button
             type="button"
-            onClick={() => user?.id && fetchAndHydrate(user.id)}
+            onClick={() => user?.id && fetchAndHydrate(user.id, { force: true })}
             className="btn-secondary"
             style={{ fontSize: '0.78rem', padding: '4px 10px' }}
           >
