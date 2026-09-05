@@ -86,7 +86,7 @@ Large Language Models (LLMs) are statistical text generators, not arithmetic eng
 ## 3. Directory Layout
 
 ```
-FINFLY/
+FINEXFLY/
 ├── docs/                      # Technical Documentation
 │   ├── architecture.md        # System design & mathematical specifications
 │   ├── security.md            # Threat model, RLS policies, key management
@@ -98,7 +98,7 @@ FINFLY/
 │   ├── verify-all.mjs         # HTTP Route verification script
 │   └── verify-financial-math.mjs # Mathematical proof runner
 ├── src/
-│   ├── app/                   # Next.js App Router Pages (20 Routes)
+│   ├── app/                   # Next.js App Router Pages (25 Routes)
 │   │   ├── finance-controller/# AI Controller Command Center
 │   │   ├── financial-twin/    # Deterministic Digital Twin workspace
 │   │   ├── reconciliation/    # Gateway & Bank Reconciliation

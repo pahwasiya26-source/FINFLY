@@ -57,17 +57,33 @@ export default function FinanceControllerPage() {
     }
   }, [user?.id, dataMode, fetchAndHydrate]);
 
-  // Load initial runway analysis on mount or mode change
-  useEffect(() => {
-    handleRunQuery('What is my current runway and cash buffer?');
-  }, [mode]);
-
-  const handleRunQuery = async (queryText: string) => {
+  const handleRunQuery = React.useCallback(async (queryText: string) => {
     if (!queryText.trim()) return;
     setLoading(true);
     setActionSuccessMessage(null);
 
-    const resp = await FinanceControllerOrchestrator.processQuery(queryText, mode, data);
+    let resp: ControllerResponse;
+    try {
+      const apiRes = await fetch('/api/consult-ca', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          query: queryText.trim(),
+          mode,
+          dataMode,
+          overview: data,
+        }),
+      });
+      const result = await apiRes.json();
+      if (apiRes.ok && result.success) {
+        resp = result.data;
+      } else {
+        resp = await FinanceControllerOrchestrator.processQuery(queryText, mode, data);
+      }
+    } catch {
+      resp = await FinanceControllerOrchestrator.processQuery(queryText, mode, data);
+    }
+
     setCurrentResponse(resp);
     setExpandedTraceId(resp.id);
     setHistory((prev) => [resp, ...prev.filter((h) => h.id !== resp.id)].slice(0, 5));
@@ -91,7 +107,12 @@ export default function FinanceControllerPage() {
         // Non-blocking audit logging
       });
     }
-  };
+  }, [data, dataMode, mode, user?.id]);
+
+  // Load initial runway analysis on mount or mode change
+  useEffect(() => {
+    handleRunQuery('What is my current runway and cash buffer?');
+  }, [mode, handleRunQuery]);
 
   const handleFormSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -271,7 +292,7 @@ export default function FinanceControllerPage() {
                   {currentResponse.decisionTrace.validationStatus === 'STRICTLY_GROUNDED' ? '● STRICTLY GROUNDED (VERIFIED LEDGER)' : '▲ PROJECTION ESTIMATE (FORWARD SIMULATION)'}
                 </span>
               </div>
-              <h2 style={{ fontSize: '1.45rem', fontWeight: 800 }}>"{currentResponse.query}"</h2>
+              <h2 style={{ fontSize: '1.45rem', fontWeight: 800 }}>&ldquo;{currentResponse.query}&rdquo;</h2>
             </div>
             <span style={{ fontFamily: 'var(--font-mono)', fontSize: '0.74rem', color: 'var(--text-tertiary)' }}>
               Trace ID: {currentResponse.id}

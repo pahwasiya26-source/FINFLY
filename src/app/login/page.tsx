@@ -384,7 +384,7 @@ function LoginFormContent() {
               type="email"
               required
               className="input-premium"
-              placeholder="siya.pahwa@finfly.ai"
+              placeholder="siya.pahwa@finexfly.ai"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               style={{ paddingLeft: '38px' }}

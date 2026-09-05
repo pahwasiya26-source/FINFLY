@@ -114,18 +114,28 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
       }
     };
     window.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('keydown', handleKeyDown);
     return () => {
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
   }, [profileMenuOpen]);
 
+  const [isSigningOut, setIsSigningOut] = useState(false);
+  const signingOutRef = React.useRef(false);
+
   const handleSignOut = async () => {
+    if (signingOutRef.current) return;
+    signingOutRef.current = true;
+    setIsSigningOut(true);
     setProfileMenuOpen(false);
     onNavigate?.();
-    await signOut();
-    router.push('/login');
+    try {
+      await signOut();
+      window.location.assign('/login');
+    } catch {
+      signingOutRef.current = false;
+      setIsSigningOut(false);
+    }
   };
 
   const userInitials = profile?.fullName
@@ -352,7 +362,7 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
                 {profile?.fullName || 'Siya Pahwa'}
               </div>
               <div style={{ fontSize: '0.74rem', color: 'var(--text-tertiary)', textOverflow: 'ellipsis', overflow: 'hidden' }}>
-                {profile?.email || (user?.email ?? 'siya.pahwa@finfly.ai')}
+                {profile?.email || (user?.email ?? 'siya.pahwa@finexfly.ai')}
               </div>
               <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '6px' }}>
                 <span className="pill-badge pill-emerald" style={{ fontSize: '0.62rem', padding: '1px 6px' }}>
@@ -443,6 +453,7 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
             <button
               type="button"
               role="menuitem"
+              disabled={isSigningOut}
               onClick={handleSignOut}
               style={{
                 display: 'flex',
@@ -455,15 +466,25 @@ export function MainNavigation({ onNavigate }: MainNavigationProps) {
                 color: 'var(--danger)',
                 fontSize: '0.82rem',
                 fontWeight: 600,
-                cursor: 'pointer',
+                cursor: isSigningOut ? 'not-allowed' : 'pointer',
                 textAlign: 'left',
                 width: '100%',
+                opacity: isSigningOut ? 0.6 : 1,
                 transition: 'background 0.15s ease',
               }}
               className="profile-dropdown-item-danger"
             >
-              <LogOut size={15} />
-              <span>Lock / Sign Out</span>
+              {isSigningOut ? (
+                <>
+                  <span style={{ display: 'inline-block', width: '12px', height: '12px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span>Signing Out...</span>
+                </>
+              ) : (
+                <>
+                  <LogOut size={15} />
+                  <span>Lock / Sign Out</span>
+                </>
+              )}
             </button>
           </div>
         )}

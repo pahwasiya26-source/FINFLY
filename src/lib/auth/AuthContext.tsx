@@ -384,9 +384,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (resetError) {
         let userFriendlyMsg = resetError.message;
-        if (resetError.message.toLowerCase().includes('rate limit')) {
-          userFriendlyMsg =
-            'Email delivery rate limit reached. Please wait a few minutes before trying again.';
+        const msgLower = (resetError.message || '').toLowerCase();
+        const isRateLimit =
+          (resetError as any).status === 429 ||
+          (resetError as any).code === 'over_email_send_rate_limit' ||
+          msgLower.includes('rate limit') ||
+          msgLower.includes('security purposes') ||
+          msgLower.includes('only request this after');
+
+        if (isRateLimit) {
+          userFriendlyMsg = resetError.message.includes('after')
+            ? resetError.message
+            : 'Email delivery rate limit reached. Please wait a few minutes before requesting another reset link.';
         }
         setError(userFriendlyMsg);
         return { success: false, error: userFriendlyMsg };

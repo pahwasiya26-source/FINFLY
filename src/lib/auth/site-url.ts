@@ -13,21 +13,22 @@ export function getSiteUrl(): string {
     return url.replace(/\/+$/, '');
   }
 
-  // 2. In browser, always use current window.location.origin
-  // Guarantees exact origin match for http://localhost:3000 and https://finexfly.vercel.app
+  // 2. In browser, if on localhost use localhost; if on vercel or custom domain, use that origin
   if (typeof window !== 'undefined' && window.location?.origin) {
     return window.location.origin.replace(/\/+$/, '');
   }
 
-  // 3. Server-side fallback: NEXT_PUBLIC_VERCEL_URL or localhost
+  // 3. Server-side fallback: production defaults to official URL https://finexfly.vercel.app
+  if (process.env.NODE_ENV === 'production' || process.env.VERCEL) {
+    return 'https://finexfly.vercel.app';
+  }
+
   let url = process.env.NEXT_PUBLIC_VERCEL_URL || 'http://localhost:3000';
 
-  // Ensure protocol is present
   if (!url.startsWith('http://') && !url.startsWith('https://')) {
     url = `https://${url}`;
   }
 
-  // Strip trailing slashes
   return url.replace(/\/+$/, '');
 }
 

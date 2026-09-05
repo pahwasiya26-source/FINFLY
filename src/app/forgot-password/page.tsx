@@ -222,17 +222,22 @@ export default function ForgotPasswordPage() {
                 <CheckCircle2 size={20} color="var(--accent-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <div>
                   <div style={{ fontSize: '0.95rem', fontWeight: 700, color: 'var(--text-primary)', marginBottom: '4px' }}>
-                    Reset link sent
+                    Password Recovery Request Dispatched
                   </div>
                   <p style={{ fontSize: '0.86rem', color: 'var(--text-secondary)', lineHeight: 1.5, margin: 0 }}>
-                    If an account exists for <strong>{email}</strong>, we&apos;ve sent a password reset link. Please check your inbox and follow the instructions.
+                    If an active FINEXFLY account is registered for <strong>{email}</strong>, a single-use password recovery link has been generated and dispatched by Supabase Auth.
                   </p>
                 </div>
               </div>
 
-              <p style={{ fontSize: '0.82rem', color: 'var(--text-tertiary)', textAlign: 'center', margin: 0 }}>
-                Didn&apos;t receive an email? Check your spam folder or wait a moment before requesting another link.
-              </p>
+              <div style={{ background: 'var(--bg-surface-elevated)', border: '1px solid var(--border-color)', borderRadius: '10px', padding: '14px 16px', fontSize: '0.82rem', color: 'var(--text-secondary)', lineHeight: 1.5 }}>
+                <p style={{ margin: '0 0 6px 0', fontWeight: 600, color: 'var(--text-primary)' }}>Important Delivery Notes:</p>
+                <ul style={{ margin: 0, paddingLeft: '18px', display: 'flex', flexDirection: 'column', gap: '4px' }}>
+                  <li>Check your <strong>Spam / Junk</strong> folder if the link does not appear in your primary inbox within 60 seconds.</li>
+                  <li>In accordance with cryptographic anti-enumeration standards, unregistered email addresses will not receive a message.</li>
+                  <li>Password recovery links expire after single use or within the configured TTL.</li>
+                </ul>
+              </div>
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', marginTop: '8px' }}>
                 <button

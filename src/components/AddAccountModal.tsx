@@ -53,6 +53,20 @@ export function AddAccountModal({
     }
   }, [open, defaultAccountType, defaultEntity]);
 
+  const handleClose = React.useCallback(() => {
+    setName('');
+    setInstitution('');
+    setAccountType(defaultAccountType || 'cash');
+    setBalance('');
+    setCurrency('INR');
+    setTicker('');
+    setAssetClass('Equities');
+    setEntity(defaultEntity || 'PERSONAL');
+    setError(null);
+    setSuccess(false);
+    onClose();
+  }, [defaultAccountType, defaultEntity, onClose]);
+
   React.useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -66,21 +80,7 @@ export function AddAccountModal({
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open]);
-
-  const handleClose = () => {
-    setName('');
-    setInstitution('');
-    setAccountType(defaultAccountType || 'cash');
-    setBalance('');
-    setCurrency('INR');
-    setTicker('');
-    setAssetClass('Equities');
-    setEntity(defaultEntity || 'PERSONAL');
-    setError(null);
-    setSuccess(false);
-    onClose();
-  };
+  }, [open, handleClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -37,7 +37,7 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl);
     }
 
-    let response = NextResponse.next({
+    const response = NextResponse.next({
       request: {
         headers: request.headers,
       },
@@ -63,6 +63,12 @@ export async function middleware(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (error || !user) {
+      if (pathname.startsWith('/api/')) {
+        return NextResponse.json(
+          { success: false, error: 'Unauthorized. Please sign in to consult Finance Controller.' },
+          { status: 401 }
+        );
+      }
       const loginUrl = new URL('/login', request.url);
       loginUrl.searchParams.set('redirect', pathname);
       return NextResponse.redirect(loginUrl);
@@ -84,6 +90,12 @@ export async function middleware(request: NextRequest) {
     );
 
   if (isConfigured && !hasDevSession) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { success: false, error: 'Unauthorized. Please sign in to consult Finance Controller.' },
+        { status: 401 }
+      );
+    }
     const loginUrl = new URL('/login', request.url);
     loginUrl.searchParams.set('redirect', pathname);
     return NextResponse.redirect(loginUrl);

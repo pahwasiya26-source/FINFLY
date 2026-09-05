@@ -8,8 +8,8 @@
 [![React](https://img.shields.io/badge/React-19.2.8-blue?style=flat-square&logo=react)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.0-blue?style=flat-square&logo=typescript)](https://www.typescriptlang.org/)
 [![Supabase](https://img.shields.io/badge/Supabase-PostgreSQL%20RLS-emerald?style=flat-square&logo=supabase)](https://supabase.com/)
-[![Tests](https://img.shields.io/badge/Tests-46%2F46%20Passing-brightgreen?style=flat-square)]()
-[![Production Build](https://img.shields.io/badge/Build-24%2F24%20Routes-blue?style=flat-square)]()
+[![Tests](https://img.shields.io/badge/Tests-48%2F48%20Passing-brightgreen?style=flat-square)]()
+[![Production Build](https://img.shields.io/badge/Build-25%2F25%20Routes-blue?style=flat-square)]()
 [![License](https://img.shields.io/badge/License-MIT-blue?style=flat-square)]()
 [![Live Demo](https://img.shields.io/badge/Demo-finexfly.vercel.app-purple?style=flat-square)](https://finexfly.vercel.app)
 

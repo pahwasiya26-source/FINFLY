@@ -22,7 +22,7 @@
 
 - **Status**: Accepted
 - **Context**: Developers, evaluators, and reviewers need to inspect UI layouts, animations, and deterministic math without setting up a remote Supabase project immediately.
-- **Decision**: If Supabase environment variables are absent in development mode (`process.env.NODE_ENV !== 'production'`), the app falls back to a verified local demo mode (`siya.pahwa@finfly.ai`). In production mode, it fails safely.
+- **Decision**: If Supabase environment variables are absent in development mode (`process.env.NODE_ENV !== 'production'`), the app falls back to a verified local demo mode (`siya.pahwa@finexfly.ai`). In production mode, it fails safely.
 - **Consequences**: Zero-friction developer onboarding while strictly protecting production deployments.
 
 ---

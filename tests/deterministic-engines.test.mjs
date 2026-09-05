@@ -223,3 +223,122 @@ test('Dataset & Personal CA: Transaction, investment, and invoice datasets maint
   assert.ok(postPurchaseCash > 0);
   assert.ok(postPurchaseRunway >= 3.0, 'Personal CA buffer remains safe for ₹1.5L purchase');
 });
+
+// -------------------------------------------------------------
+// 7. Consult CA / AI Finance Agent End-to-End Orchestration Tests
+// -------------------------------------------------------------
+test('Consult CA: Empty workspace honestly reports insufficient data without hallucinating numbers', async () => {
+  const emptyOverview = {
+    netPosition: 0,
+    cash: 0,
+    investments: 0,
+    assets: 0,
+    liabilities: 0,
+    monthlyIncome: 0,
+    monthlyExpenses: 0,
+    monthlySurplus: 0,
+    savingsRate: 0,
+    healthScore: 0,
+  };
+
+  const response = await FinanceControllerOrchestrator.processQuery(
+    'How much runway do I have?',
+    'PERSONAL',
+    emptyOverview,
+    { dataMode: 'EMPTY', skipLLM: true }
+  );
+
+  assert.equal(response.isInsufficientData, true);
+  assert.equal(response.decisionTrace.validationStatus, 'STRICTLY_GROUNDED');
+  assert.ok(response.explanation.includes('does not contain any recorded financial accounts'));
+  assert.equal(response.decisionTrace.groundedMetrics[0].value, '0 Accounts / 0 Txns');
+  assert.ok(response.stagedAction);
+  assert.equal(response.stagedAction.requiresHumanApproval, true);
+});
+
+test('Consult CA: Correctly routes and grounds all 7 realistic questions', async () => {
+  // 1. "What is my current financial position?"
+  const q1 = await FinanceControllerOrchestrator.processQuery(
+    'What is my current financial position?',
+    'PERSONAL',
+    personalData,
+    { skipLLM: true }
+  );
+  assert.equal(q1.intent, 'General Financial Overview');
+  assert.equal(q1.decisionTrace.validationStatus, 'STRICTLY_GROUNDED');
+  assert.ok(q1.decisionTrace.toolsUsed.some((t) => t.toolName === 'getFinancialOverview'));
+  assert.ok(q1.decisionTrace.groundedMetrics.some((m) => m.label === 'Net Position' && m.value.includes('35,00,000')));
+
+  // 2. "How much runway do I have?"
+  const q2 = await FinanceControllerOrchestrator.processQuery(
+    'How much runway do I have?',
+    'PERSONAL',
+    personalData,
+    { skipLLM: true }
+  );
+  assert.equal(q2.intent, 'Runway & Liquidity Buffer');
+  assert.equal(q2.decisionTrace.validationStatus, 'STRICTLY_GROUNDED');
+  assert.ok(q2.decisionTrace.toolsUsed.some((t) => t.toolName === 'computeRunway'));
+  assert.ok(q2.decisionTrace.groundedMetrics.some((m) => m.label === 'Runway Buffer' && m.value.includes('4.7 Months')));
+
+  // 3. "Where is my cash going?"
+  const q3 = await FinanceControllerOrchestrator.processQuery(
+    'Where is my cash going?',
+    'PERSONAL',
+    personalData,
+    { skipLLM: true }
+  );
+  assert.equal(q3.intent, 'Spending & Outflow Audit');
+  assert.equal(q3.decisionTrace.validationStatus, 'STRICTLY_GROUNDED');
+  assert.ok(q3.decisionTrace.toolsUsed.some((t) => t.toolName === 'detectAnomalies'));
+  assert.ok(q3.decisionTrace.groundedMetrics.some((m) => m.label === 'Monthly Outflows' && m.value.includes('95,000')));
+
+  // 4. "Are there unusual transactions?"
+  const q4 = await FinanceControllerOrchestrator.processQuery(
+    'Are there unusual transactions?',
+    'PERSONAL',
+    personalData,
+    { skipLLM: true }
+  );
+  assert.equal(q4.intent, 'Anomaly & Variance Audit');
+  assert.equal(q4.decisionTrace.validationStatus, 'STRICTLY_GROUNDED');
+  assert.ok(q4.decisionTrace.toolsUsed.some((t) => t.toolName === 'detectAnomalies'));
+  assert.ok(q4.decisionTrace.groundedMetrics.length > 0);
+
+  // 5. "How much tax should I plan for?"
+  const q5 = await FinanceControllerOrchestrator.processQuery(
+    'How much tax should I plan for?',
+    'PERSONAL',
+    personalData,
+    { skipLLM: true }
+  );
+  assert.equal(q5.intent, 'Tax Projection & Statutory Estimates');
+  assert.equal(q5.decisionTrace.validationStatus, 'PROJECTION_ESTIMATE');
+  assert.ok(q5.decisionTrace.toolsUsed.some((t) => t.toolName === 'calculateTaxProjection'));
+  assert.ok(q5.decisionTrace.groundedMetrics.some((m) => m.label === 'Estimated Tax Payable'));
+
+  // 6. "What happens if my monthly expenses increase?"
+  const q6 = await FinanceControllerOrchestrator.processQuery(
+    'What happens if my monthly expenses increase by ₹50,000?',
+    'PERSONAL',
+    personalData,
+    { skipLLM: true }
+  );
+  assert.equal(q6.intent, 'Digital Twin Scenario Simulation');
+  assert.equal(q6.decisionTrace.validationStatus, 'PROJECTION_ESTIMATE');
+  assert.ok(q6.decisionTrace.toolsUsed.some((t) => t.toolName === 'simulateScenario'));
+  assert.ok(q6.stagedAction);
+  assert.equal(q6.stagedAction.type, 'SIMULATE_IN_TWIN');
+  assert.equal(q6.stagedAction.requiresHumanApproval, true);
+
+  // 7. "Summarize my financial situation."
+  const q7 = await FinanceControllerOrchestrator.processQuery(
+    'Summarize my financial situation.',
+    'PERSONAL',
+    personalData,
+    { skipLLM: true }
+  );
+  assert.equal(q7.intent, 'General Financial Overview');
+  assert.equal(q7.decisionTrace.validationStatus, 'STRICTLY_GROUNDED');
+  assert.ok(q7.decisionTrace.toolsUsed.some((t) => t.toolName === 'getFinancialOverview'));
+});

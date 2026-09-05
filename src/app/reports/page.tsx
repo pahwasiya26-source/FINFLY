@@ -42,7 +42,7 @@ export default function ReportsPage() {
 
   const handleDownloadCSV = () => {
     let csvRows: string[][] = [];
-    let filename = `finexfly_report_${activeReport.toLowerCase()}_${Date.now()}.csv`;
+    const filename = `finexfly_report_${activeReport.toLowerCase()}_${Date.now()}.csv`;
 
     if (activeReport === 'CASH_FLOW') {
       csvRows = [

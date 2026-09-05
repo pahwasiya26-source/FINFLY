@@ -20,6 +20,21 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     pathname.startsWith('/reset-password') ||
     pathname.startsWith('/auth/');
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
+  const [isLocking, setIsLocking] = useState(false);
+  const lockingRef = React.useRef(false);
+
+  const handleLockWorkspace = async () => {
+    if (lockingRef.current) return;
+    lockingRef.current = true;
+    setIsLocking(true);
+    try {
+      await signOut();
+      window.location.assign('/login');
+    } catch {
+      lockingRef.current = false;
+      setIsLocking(false);
+    }
+  };
 
   // App/Session-level data hydration — runs once when user session is active
   React.useEffect(() => {
@@ -94,15 +109,22 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
             <button
               type="button"
-              onClick={async () => {
-                await signOut();
-                router.push('/login');
-              }}
+              disabled={isLocking}
+              onClick={handleLockWorkspace}
               className="topbar-lock-btn"
               title="Lock session and return to login"
             >
-              <Lock size={13} />
-              <span>Lock Workspace</span>
+              {isLocking ? (
+                <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <span style={{ display: 'inline-block', width: '10px', height: '10px', border: '2px solid currentColor', borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
+                  <span>Locking...</span>
+                </div>
+              ) : (
+                <>
+                  <Lock size={13} />
+                  <span>Lock Workspace</span>
+                </>
+              )}
             </button>
           </div>
         </header>

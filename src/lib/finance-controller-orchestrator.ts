@@ -9,6 +9,7 @@ import {
 } from './finance-tools';
 import { ScenarioVariable } from './digital-twin-engine';
 import { FinancialOverview } from './mock-data';
+import { geminiProvider } from './llm-provider';
 
 export interface DecisionTraceEntry {
   traceId: string;
@@ -51,64 +52,226 @@ export interface ControllerResponse {
   decisionTrace: DecisionTraceEntry;
   stagedAction?: DecisionTraceEntry['stagedAction'];
   created_at: string;
+  provider?: 'GEMINI' | 'DETERMINISTIC_LOCAL';
+  aiProviderConfigured?: boolean;
+  aiProviderMessage?: string;
+  isInsufficientData?: boolean;
 }
 
 export class FinanceControllerOrchestrator {
   /**
-   * Process a natural language financial query through strictly deterministic tools.
+   * Process a natural language financial query through strictly deterministic tools,
+   * optionally augmented by server-side Gemini narrative explanation.
    */
   public static async processQuery(
     query: string,
     currentMode: 'PERSONAL' | 'BUSINESS' = 'PERSONAL',
-    customOverview?: FinancialOverview
+    customOverview?: FinancialOverview,
+    options?: {
+      transactions?: any[];
+      dataMode?: 'REAL' | 'DEMO' | 'EMPTY';
+      skipLLM?: boolean;
+    }
   ): Promise<ControllerResponse> {
     const lowerQuery = query.toLowerCase();
     const traceId = `trace_${Date.now()}_${Math.random().toString(36).substr(2, 6)}`;
     const timestamp = new Date().toISOString();
 
-    // 1. Intent Detection
-    if (lowerQuery.includes('runway') || lowerQuery.includes('burn') || lowerQuery.includes('cash buffer')) {
-      return this.handleRunwayQuery(query, currentMode, traceId, timestamp, customOverview);
-    } else if (
+    // 0. Empty Data Mode Safety Gate: Never fabricate balances if user workspace has no records
+    const isExplicitEmpty = options?.dataMode === 'EMPTY';
+    const isZeroOverview = customOverview &&
+      customOverview.cash === 0 &&
+      customOverview.monthlyIncome === 0 &&
+      customOverview.monthlyExpenses === 0 &&
+      customOverview.netPosition === 0 &&
+      (!options?.transactions || options.transactions.length === 0);
+
+    if (isExplicitEmpty || isZeroOverview) {
+      return this.handleEmptyDataQuery(query, currentMode, traceId, timestamp);
+    }
+
+    let response: ControllerResponse;
+
+    // 1. Intent Detection with Precise Disambiguation
+    if (
       lowerQuery.includes('reconcil') ||
       lowerQuery.includes('gateway') ||
       lowerQuery.includes('bank match') ||
       lowerQuery.includes('discrepan') ||
-      lowerQuery.includes('duplicate')
+      lowerQuery.includes('duplicate') ||
+      lowerQuery.includes('settlement')
     ) {
-      return this.handleReconciliationQuery(query, traceId, timestamp);
-    } else if (
-      lowerQuery.includes('simulate') ||
-      lowerQuery.includes('what if') ||
-      lowerQuery.includes('hire') ||
-      lowerQuery.includes('scenario') ||
-      lowerQuery.includes('spend') ||
-      lowerQuery.includes('additional')
-    ) {
-      return this.handleScenarioQuery(query, currentMode, traceId, timestamp, customOverview);
+      response = this.handleReconciliationQuery(query, traceId, timestamp);
     } else if (
       lowerQuery.includes('tax') ||
       lowerQuery.includes('deduction') ||
       lowerQuery.includes('regime') ||
-      lowerQuery.includes('87a')
+      lowerQuery.includes('87a') ||
+      lowerQuery.includes('advance tax') ||
+      lowerQuery.includes('slab')
     ) {
-      return this.handleTaxQuery(query, currentMode, traceId, timestamp, customOverview);
+      response = this.handleTaxQuery(query, currentMode, traceId, timestamp, customOverview);
     } else if (
+      lowerQuery.includes('runway') ||
+      lowerQuery.includes('burn') ||
+      lowerQuery.includes('cash buffer') ||
+      lowerQuery.includes('how long')
+    ) {
+      response = this.handleRunwayQuery(query, currentMode, traceId, timestamp, customOverview);
+    } else if (
+      lowerQuery.includes('cash going') ||
+      lowerQuery.includes('where is my cash') ||
+      lowerQuery.includes('where does my money') ||
+      lowerQuery.includes('overspend') ||
+      lowerQuery.includes('spending breakdown') ||
+      lowerQuery.includes('outflows')
+    ) {
+      response = this.handleSpendingAnalysisQuery(query, currentMode, traceId, timestamp, customOverview);
+    } else if (
+      lowerQuery.includes('unusual') ||
       lowerQuery.includes('anomal') ||
       lowerQuery.includes('variance') ||
       lowerQuery.includes('risk') ||
-      lowerQuery.includes('trend') ||
+      lowerQuery.includes('irregular') ||
       lowerQuery.includes('dso')
     ) {
-      return this.handleAnomalyQuery(query, currentMode, traceId, timestamp);
+      response = this.handleAnomalyQuery(query, currentMode, traceId, timestamp);
+    } else if (
+      lowerQuery.includes('what happens if') ||
+      lowerQuery.includes('increase') ||
+      lowerQuery.includes('simulate') ||
+      lowerQuery.includes('what if') ||
+      lowerQuery.includes('hire') ||
+      lowerQuery.includes('scenario') ||
+      lowerQuery.includes('afford') ||
+      lowerQuery.includes('purchase') ||
+      lowerQuery.includes('additional')
+    ) {
+      response = this.handleScenarioQuery(query, currentMode, traceId, timestamp, customOverview);
     } else {
-      return this.handleGeneralOverviewQuery(query, currentMode, traceId, timestamp, customOverview);
+      // General financial position, health, and situation summary
+      response = this.handleGeneralOverviewQuery(query, currentMode, traceId, timestamp, customOverview);
     }
+
+    // 2. Server-side AI Provider (Gemini) Augmentation
+    const isServer = typeof window === 'undefined';
+    if (isServer && !options?.skipLLM) {
+      try {
+        if (geminiProvider.isConfigured()) {
+          const aiContext = {
+            query,
+            intent: response.intent,
+            validationStatus: response.decisionTrace.validationStatus,
+            groundedMetrics: response.decisionTrace.groundedMetrics,
+            deterministicSummary: response.explanation,
+            deterministicBulletPoints: response.bulletPoints,
+          };
+
+          const aiExplanation = await geminiProvider.generateResponse(
+            `Explain this financial assessment to the user based STRICTLY on the deterministic metrics provided. Do not hallucinate or change numbers.\nQuery: "${query}"`,
+            aiContext
+          );
+
+          if (aiExplanation && aiExplanation.trim().length > 0) {
+            response.explanation = aiExplanation;
+            response.provider = 'GEMINI';
+            response.aiProviderConfigured = true;
+          }
+        } else {
+          response.provider = 'DETERMINISTIC_LOCAL';
+          response.aiProviderConfigured = false;
+          response.aiProviderMessage = 'AI service is not configured. Please configure the server-side AI provider (GEMINI_API_KEY).';
+        }
+      } catch (err: any) {
+        console.warn('[FinanceControllerOrchestrator] AI provider enhancement failed, falling back to deterministic explanation:', err?.message || err);
+        response.provider = 'DETERMINISTIC_LOCAL';
+        response.aiProviderConfigured = true;
+        response.aiProviderMessage = `AI provider temporarily unavailable (${err?.message || 'timeout'}). Deterministic engine output provided.`;
+      }
+    } else {
+      response.provider = 'DETERMINISTIC_LOCAL';
+      response.aiProviderConfigured = false;
+    }
+
+    return response;
   }
 
   // -------------------------------------------------------------
   // Intent Handlers (All numbers populated strictly from tool data)
   // -------------------------------------------------------------
+
+  private static handleEmptyDataQuery(
+    query: string,
+    mode: 'PERSONAL' | 'BUSINESS',
+    traceId: string,
+    timestamp: string
+  ): ControllerResponse {
+    const overviewTool = getFinancialOverview(mode, {
+      netPosition: 0,
+      cash: 0,
+      investments: 0,
+      assets: 0,
+      liabilities: 0,
+      monthlyIncome: 0,
+      monthlyExpenses: 0,
+      monthlySurplus: 0,
+      savingsRate: 0,
+      healthScore: 0,
+    });
+
+    const explanation = `Your ${mode.toLowerCase()} workspace does not contain any recorded financial accounts or transactions. The Finance Controller cannot calculate personalized runway, burn rate, tax projections, or spending variances without verified general ledger data. Please add your financial accounts or record transactions in the Command Center to activate real-time deterministic intelligence.`;
+
+    const bulletPoints = [
+      `Liquid Cash: ₹0 (No accounts connected)`,
+      `Monthly Inflow: ₹0`,
+      `Monthly Outflow: ₹0`,
+      `Telemetry Status: Insufficient Ledger Data`,
+      `Action: Connect bank/investment accounts or record transactions in the Command Center`,
+    ];
+
+    const decisionTrace: DecisionTraceEntry = {
+      traceId,
+      timestamp,
+      query,
+      intent: 'INSUFFICIENT_DATA_GUIDANCE',
+      toolsUsed: [
+        {
+          toolName: overviewTool.toolName,
+          inputs: overviewTool.inputs,
+          outputs: overviewTool.data,
+          formula: overviewTool.formula,
+          source: 'General Ledger Registry (Empty Workspace)',
+        },
+      ],
+      validationStatus: 'STRICTLY_GROUNDED',
+      groundedMetrics: [
+        { label: 'Ledger Status', value: '0 Accounts / 0 Txns', source: 'Ledger Registry', positive: false },
+        { label: 'Liquid Cash', value: '₹0', source: 'Treasury Balance' },
+        { label: 'Runway Buffer', value: '0 Months', formula: '0 / 0', source: 'Runway Engine' },
+      ],
+      stagedAction: {
+        id: `act_${traceId}`,
+        title: 'Add Financial Account',
+        description: 'Connect your first bank, savings, or investment account to activate deterministic telemetry.',
+        type: 'NAVIGATE',
+        targetUrl: '/',
+        requiresHumanApproval: true,
+      },
+    };
+
+    return {
+      id: traceId,
+      query,
+      intent: 'Insufficient Ledger Data',
+      explanation,
+      bulletPoints,
+      decisionTrace,
+      stagedAction: decisionTrace.stagedAction,
+      created_at: timestamp,
+      isInsufficientData: true,
+      provider: 'DETERMINISTIC_LOCAL',
+    };
+  }
 
   private static handleRunwayQuery(
     query: string,
@@ -188,6 +351,88 @@ export class FinanceControllerOrchestrator {
     };
   }
 
+  private static handleSpendingAnalysisQuery(
+    query: string,
+    mode: 'PERSONAL' | 'BUSINESS',
+    traceId: string,
+    timestamp: string,
+    customOverview?: FinancialOverview
+  ): ControllerResponse {
+    const overviewTool = getFinancialOverview(mode, customOverview);
+    const anomalyTool = detectAnomalies(mode);
+    const data = overviewTool.data;
+
+    const expenseRatio = data.monthlyIncome > 0
+      ? Number(((data.monthlyExpenses / data.monthlyIncome) * 100).toFixed(1))
+      : 0;
+
+    const topVariances = anomalyTool.data.anomaliesDetected
+      .filter((a) => a.type === 'EXPENSE_VARIANCE')
+      .map((a) => `${a.category}: ${a.metricVariance} (${a.details})`);
+
+    const varianceSummary = topVariances.length > 0
+      ? topVariances.join('; ')
+      : 'All expenditure lines remain strictly aligned with historical 6-month baselines.';
+
+    const explanation = `Outflow & Cash Allocation Audit (${mode} Mode): Total monthly expenditure is ₹${data.monthlyExpenses.toLocaleString('en-IN')}, representing ${expenseRatio}% of total inflows. Net monthly surplus retained is ₹${data.monthlySurplus.toLocaleString('en-IN')} (${data.savingsRate}% savings rate). ${varianceSummary}`;
+
+    const bulletPoints = [
+      `Total Monthly Outflows: ₹${data.monthlyExpenses.toLocaleString('en-IN')}`,
+      `Expense-to-Income Ratio: ${expenseRatio}%`,
+      `Monthly Retained Surplus: ₹${data.monthlySurplus.toLocaleString('en-IN')} (${data.savingsRate}% rate)`,
+      ...anomalyTool.data.anomaliesDetected.map((a) => `[${a.severity}] ${a.category}: ${a.headline} (${a.metricVariance})`),
+    ];
+
+    const decisionTrace: DecisionTraceEntry = {
+      traceId,
+      timestamp,
+      query,
+      intent: 'SPENDING_AND_OUTFLOW_ANALYSIS',
+      toolsUsed: [
+        {
+          toolName: overviewTool.toolName,
+          inputs: overviewTool.inputs,
+          outputs: overviewTool.data,
+          formula: overviewTool.formula,
+          source: overviewTool.source,
+        },
+        {
+          toolName: anomalyTool.toolName,
+          inputs: anomalyTool.inputs,
+          outputs: anomalyTool.data,
+          formula: anomalyTool.formula,
+          source: anomalyTool.source,
+        },
+      ],
+      validationStatus: 'STRICTLY_GROUNDED',
+      groundedMetrics: [
+        { label: 'Monthly Outflows', value: `₹${data.monthlyExpenses.toLocaleString('en-IN')}`, source: overviewTool.source, positive: false },
+        { label: 'Expense Ratio', value: `${expenseRatio}%`, formula: 'Expenses / Income * 100', source: overviewTool.source, positive: expenseRatio <= 60 },
+        { label: 'Monthly Surplus', value: `₹${data.monthlySurplus.toLocaleString('en-IN')}`, source: overviewTool.source, positive: true },
+        { label: 'Savings Rate', value: `${data.savingsRate}%`, source: overviewTool.source, positive: data.savingsRate >= 30 },
+      ],
+      stagedAction: {
+        id: `act_${traceId}`,
+        title: 'Inspect General Ledger Outflows in Money Flow',
+        description: 'Drill down into category-level spending history and variance charts.',
+        type: 'NAVIGATE',
+        targetUrl: '/money-flow',
+        requiresHumanApproval: true,
+      },
+    };
+
+    return {
+      id: traceId,
+      query,
+      intent: 'Spending & Outflow Audit',
+      explanation,
+      bulletPoints,
+      decisionTrace,
+      stagedAction: decisionTrace.stagedAction,
+      created_at: timestamp,
+    };
+  }
+
   private static handleReconciliationQuery(
     query: string,
     traceId: string,
@@ -256,7 +501,7 @@ export class FinanceControllerOrchestrator {
     customOverview?: FinancialOverview
   ): ControllerResponse {
     const overviewTool = getFinancialOverview(mode, customOverview);
-    
+
     // Parse numeric intent or apply sensible default simulation
     let expenseAddition = 50000;
     const match = query.match(/₹?\s*([\d,]+(\.\d+)?)\s*(k|l|lakh|thousand)?/i);
@@ -320,7 +565,7 @@ export class FinanceControllerOrchestrator {
           source: simTool.source,
         },
       ],
-      validationStatus: 'STRICTLY_GROUNDED',
+      validationStatus: 'PROJECTION_ESTIMATE',
       groundedMetrics: [
         { label: 'Baseline M12 Cash', value: `₹${data.baselineMonth12Cash.toLocaleString('en-IN')}`, source: simTool.source },
         { label: 'Simulated M12 Cash', value: `₹${data.simulatedMonth12Cash.toLocaleString('en-IN')}`, source: simTool.source, positive: data.simulatedMonth12Cash > 0 },

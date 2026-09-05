@@ -91,7 +91,7 @@ export default function SettingsPage() {
             </div>
             <div>
               <div style={{ fontSize: '0.94rem', fontWeight: 700, color: 'var(--text-primary)' }}>{profile?.fullName || 'Siya Pahwa'}</div>
-              <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{profile?.email || 'siya.pahwa@finfly.ai'}</div>
+              <div style={{ fontSize: '0.78rem', color: 'var(--text-tertiary)' }}>{profile?.email || 'siya.pahwa@finexfly.ai'}</div>
               <div style={{ fontSize: '0.7rem', color: 'var(--accent-primary)', fontWeight: 600, marginTop: '2px' }}>
                 ● Verified Workspace Owner &amp; Controller
               </div>

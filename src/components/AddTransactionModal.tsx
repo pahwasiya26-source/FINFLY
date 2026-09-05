@@ -67,6 +67,17 @@ export function AddTransactionModal({
     }
   }, [accounts, accountId]);
 
+  const handleClose = React.useCallback(() => {
+    setDescription('');
+    setAmount('');
+    setTxType('income');
+    setCategory(STANDARD_CATEGORIES[0]);
+    setTxDate(today);
+    setError(null);
+    setSuccess(false);
+    onClose();
+  }, [onClose, today]);
+
   React.useEffect(() => {
     if (!open) return;
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -80,18 +91,7 @@ export function AddTransactionModal({
       window.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('keydown', handleKeyDown);
     };
-  }, [open]);
-
-  const handleClose = () => {
-    setDescription('');
-    setAmount('');
-    setTxType('income');
-    setCategory(STANDARD_CATEGORIES[0]);
-    setTxDate(today);
-    setError(null);
-    setSuccess(false);
-    onClose();
-  };
+  }, [open, handleClose]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
